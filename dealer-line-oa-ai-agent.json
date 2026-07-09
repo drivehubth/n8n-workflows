@@ -1,0 +1,1500 @@
+{
+  "name": "[Dealer] LINE OA — AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "q": "subject:\"ได้รับการจองใหม่จาก DRIVEHUB\""
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        848
+      ],
+      "id": "a5678d8c-4156-48ea-a7af-a6c095548d09",
+      "name": "GetNewBookingGmail",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "wqlOQpAtr6EAUg84",
+          "name": "[Dev] Operation Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1otDehzSZanv_UdqVMwYI3W7oqypRILEqUOQSgUkTehs",
+          "mode": "list",
+          "cachedResultName": "[N8N] Dealer Line Group UID",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1otDehzSZanv_UdqVMwYI3W7oqypRILEqUOQSgUkTehs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1otDehzSZanv_UdqVMwYI3W7oqypRILEqUOQSgUkTehs/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "branch_aggregate_id",
+              "lookupValue": "={{ $json.data.booking.branch_uuid }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1376,
+        688
+      ],
+      "id": "b55a861a-fc29-468a-9d8b-cd00b1f1997b",
+      "name": "get dealer group id",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "2Z58mnLNDfs33OTR",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('config').first().json.base_url }}/drivehubv3-api-graphql/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-access-token",
+              "value": "={{ $json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"query booking($id: Int) { booking(id: $id) { id uuid done dealership_uuid branch_uuid dealership { name } branch { name } booking_begin booking_end genre note customer { aggregate_id first_name last_name email phone_number } car { title license_plate } pickup_service_area { name } retrun_service_area { name } duration { days hours total_days } pricing { pickup_price return_price ot_price grace_price discount pricing_rate { date note price } grand_total } tax_invoice { full_name tax_id branch_number address postcode email } } }\",\n  \"variables\": {\n    \"id\": {{ $('extract booking id').item.json.booking_id }}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        592,
+        848
+      ],
+      "id": "bbc28eef-0289-4d98-9e08-7c578ef9367f",
+      "name": "get booking detail",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "03491bbf-8bf2-4091-aa21-35aab6ad58e9",
+              "name": "booking_id",
+              "value": "={{ $('GetNewBookingGmail').item.json.Subject.match(/#(\\d+)/)[1] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        848
+      ],
+      "id": "8a327b02-255d-4344-bfa8-c3ad3f211b7d",
+      "name": "extract booking id"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Line-Retry-Key",
+              "value": "={{ $('get booking detail').item.json.data.booking.uuid }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"{{ $('get dealer group id').item.json.line_group_chat_id }}\",\n  \"messages\": [\n    {\n      \"type\": \"flex\",\n      \"altText\": \"{{ '🚗 การจองใหม่ #' + $('get booking detail').item.json.data.booking.id }}\",\n      \"contents\": {\n        \"type\": \"bubble\",\n        \"header\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"backgroundColor\": \"#1B6AE3\",\n          \"paddingAll\": \"16px\",\n          \"contents\": [\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"🚗 การจองใหม่!\", \"weight\": \"bold\", \"color\": \"#FFFFFF\", \"size\": \"md\", \"flex\": 3 },\n                { \"type\": \"text\", \"text\": \"{{ '#' + $('get booking detail').item.json.data.booking.id }}\", \"weight\": \"bold\", \"color\": \"#FFFFFF\", \"size\": \"md\", \"align\": \"end\", \"flex\": 2 }\n              ]\n            },\n            {\n              \"type\": \"text\",\n              \"text\": \"{{ ({'daily':'เช่ารถขับเอง','transfer':'มีคนขับ'})[$('get booking detail').item.json.data.booking.genre] || $('get booking detail').item.json.data.booking.genre }}\",\n              \"color\": \"#C5D8FF\",\n              \"size\": \"sm\",\n              \"margin\": \"xs\"\n            }\n          ]\n        },\n        \"body\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"spacing\": \"md\",\n          \"paddingAll\": \"16px\",\n          \"contents\": [\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"spacing\": \"sm\",\n              \"contents\": [\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"📅 รับรถ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                    { \"type\": \"text\", \"text\": \"{{ new Date($('get booking detail').item.json.data.booking.booking_begin*1000).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',calendar:'gregory',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')+'น.' }}\", \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"weight\": \"bold\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"🏁 คืนรถ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                    { \"type\": \"text\", \"text\": \"{{ new Date($('get booking detail').item.json.data.booking.booking_end*1000).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',calendar:'gregory',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')+'น.' }}\", \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"weight\": \"bold\" }\n                  ]\n                },\n                { \"type\": \"text\", \"text\": \"{{ (()=>{ const d=$('get booking detail').item.json.data.booking.duration; const p=[]; if(d.days>0)p.push(d.days+' วัน'); if(d.hours>0)p.push(d.hours+' ชั่วโมง'); return 'รวม '+p.join(' '); })() }}\", \"color\": \"#888888\", \"size\": \"xs\" }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"📍 สถานที่\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                { \"type\": \"text\", \"text\": \"{{ $('get booking detail').item.json.data.booking.pickup_service_area.name }}\", \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"weight\": \"bold\" }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"🚘 รถ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                { \"type\": \"text\", \"text\": \"{{ $('get booking detail').item.json.data.booking.car.title + ($('get booking detail').item.json.data.booking.car.license_plate ? '\\\\nทะเบียน: '+$('get booking detail').item.json.data.booking.car.license_plate : '') }}\", \"size\": \"sm\", \"flex\": 5, \"wrap\": true }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"spacing\": \"xs\",\n              \"contents\": [\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"👤\", \"size\": \"sm\", \"flex\": 1 },\n                    { \"type\": \"text\", \"text\": \"{{ $('get booking detail').item.json.data.booking.customer.first_name+' '+$('get booking detail').item.json.data.booking.customer.last_name }}\", \"size\": \"sm\", \"flex\": 6, \"wrap\": true, \"weight\": \"bold\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"📞\", \"size\": \"sm\", \"flex\": 1 },\n                    { \"type\": \"text\", \"text\": \"{{ $('get booking detail').item.json.data.booking.customer.phone_number }}\", \"size\": \"sm\", \"flex\": 6 }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"✉️\", \"size\": \"sm\", \"flex\": 1 },\n                    { \"type\": \"text\", \"text\": \"{{ $('get booking detail').item.json.data.booking.customer.email }}\", \"size\": \"sm\", \"flex\": 6, \"wrap\": true }\n                  ]\n                }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"หมายเหตุ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2, \"wrap\": true },\n                { \"type\": \"text\", \"text\": \"{{ $('get booking detail').item.json.data.booking.note || '-' }}\", \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"color\": \"#1B6AE3\", \"maxLines\": 3 }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"spacing\": \"xs\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"💳 ราคาหน้าเว็บไซต์\", \"weight\": \"bold\", \"size\": \"sm\", \"color\": \"#333333\" },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"margin\": \"xs\",\n                  \"contents\": [\n                    {\n                      \"type\": \"text\",\n                      \"text\": \"{{ (()=>{ const p=$('get booking detail').item.json.data.booking.pricing; return p.pricing_rate.map(r=>{ const d=new Date(r.date*1000).toLocaleDateString('th-TH',{timeZone:'Asia/Bangkok',calendar:'gregory',day:'2-digit',month:'2-digit',year:'numeric'}); const note=r.note.trim(); const t=note.length>10?note.substring(0,15)+'...':note; return d+' ('+t+')'; }).join('\\\\n'); })() }}\",\n                      \"size\": \"xs\", \"color\": \"#555555\", \"wrap\": true, \"flex\": 6\n                    },\n                    {\n                      \"type\": \"text\",\n                      \"text\": \"{{ (()=>{ const p=$('get booking detail').item.json.data.booking.pricing; return p.pricing_rate.map(r=>'฿'+(r.price/100).toLocaleString('en-US')).join('\\\\n'); })() }}\",\n                      \"size\": \"xs\", \"color\": \"#555555\", \"wrap\": true, \"flex\": 2, \"align\": \"end\"\n                    }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าล่วงเวลา\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.grace_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าบริการนอกเวลาทำการ\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.ot_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าบริการส่งรถ\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.pickup_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าบริการรับรถ\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.return_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ส่วนลด\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ $('get booking detail').item.json.data.booking.pricing.discount > 0 ? '-฿'+($('get booking detail').item.json.data.booking.pricing.discount/100).toLocaleString('en-US') : '-' }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\", \"color\": \"#CC3300\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"backgroundColor\": \"#EEF4FF\",\n                  \"paddingAll\": \"8px\",\n                  \"cornerRadius\": \"6px\",\n                  \"margin\": \"sm\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"💰 รวมทั้งสิ้น\", \"weight\": \"bold\", \"size\": \"sm\", \"flex\": 3 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.grand_total/100).toLocaleString('en-US') }}\", \"weight\": \"bold\", \"size\": \"sm\", \"color\": \"#1B6AE3\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                }\n              ]\n            }\n          ]\n        },\n        \"footer\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"paddingAll\": \"12px\",\n          \"spacing\": \"sm\",\n          \"contents\": [\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"backgroundColor\": \"#1B6AE3\",\n              \"cornerRadius\": \"8px\",\n              \"paddingAll\": \"11px\",\n              \"action\": {\n                \"type\": \"uri\",\n                \"label\": \"ติดต่อลูกค้า\",\n                \"uri\": \"{{ 'tel:' + $('get booking detail').item.json.data.booking.customer.phone_number.replace(/[^0-9+]/g,'') }}\"\n              },\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"ติดต่อลูกค้า\", \"color\": \"#FFFFFF\", \"size\": \"md\", \"align\": \"center\" }\n              ]\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"backgroundColor\": \"#FFFFFF\",\n              \"borderColor\": \"#1B6AE3\",\n              \"borderWidth\": \"1px\",\n              \"cornerRadius\": \"8px\",\n              \"paddingAll\": \"10px\",\n              \"action\": {\n                \"type\": \"uri\",\n                \"label\": \"ดูรายละเอียดการจอง\",\n                \"uri\": \"{{ $('config').first().json.manage_url + '/staff/bookings/' + $('get booking detail').item.json.data.booking.id }}\"\n              },\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"ดูรายละเอียดการจอง\", \"color\": \"#1B6AE3\", \"size\": \"md\", \"align\": \"center\" }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2144,
+        480
+      ],
+      "id": "05229698-9e82-4107-99eb-fe24bf5ee3e0",
+      "name": "push to dealer line",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "wnEM9E2aVqJcfDpe",
+          "name": "LINE OA Dealer — Token (DEV)"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('config').first().json.base_url }}/drivehubv3-api-graphql/query",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-access-token",
+              "value": "={{ $json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"operationName\": \"adminDoneBooking\",\n  \"variables\": {\n    \"uuid\": \"{{ $('get booking detail').item.json.data.booking.uuid }}\"\n  },\n  \"query\": \"mutation adminDoneBooking($uuid: String!) {\\n  adminDoneBooking(uuid: $uuid)\\n}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2592,
+        464
+      ],
+      "id": "33bc87fb-7b43-4bf4-846c-1ab91446c4f1",
+      "name": "post booking done",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d4c14aee-9d49-400d-bc19-490171424802",
+              "name": "base_url",
+              "value": "https://dev-api-gw.drivehub.co",
+              "type": "string"
+            },
+            {
+              "id": "b230289c-85bb-44c1-827d-76172ff18ce1",
+              "name": "manage_url",
+              "value": "https://dev-manage.drivehub.local",
+              "type": "string"
+            },
+            {
+              "id": "758813f6-6613-4e13-933a-711bca503c2f",
+              "name": "slack_ops_channel",
+              "value": "n8n-op_dev-notification",
+              "type": "string"
+            },
+            {
+              "id": "d12c8ff5-948d-4bbc-a480-9caff295810f",
+              "name": "slack_error_channel",
+              "value": "n8n-chat-notification",
+              "type": "string"
+            },
+            {
+              "id": "c1b7cd9e-5a5f-43c6-946c-8a78d4986a12",
+              "name": "backlog_threshold_min",
+              "value": "5",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -128,
+        848
+      ],
+      "id": "bbea7cf3-322a-4f9d-8035-d92bf9fd97d3",
+      "name": "config"
+    },
+    {
+      "parameters": {
+        "content": "Terminate",
+        "height": 80,
+        "width": 150,
+        "color": "#000000"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2592,
+        368
+      ],
+      "typeVersion": 1,
+      "id": "353656c0-fb97-49ec-a731-b0e06800570b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "VIEM0LV7HvcRdVdS",
+          "mode": "list",
+          "cachedResultName": "cached_api_tokens",
+          "cachedResultUrl": "/projects/qGxCtHEgXOeb7UXZ/datatables/VIEM0LV7HvcRdVdS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "credential_name",
+              "keyValue": "n8n"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        352,
+        848
+      ],
+      "id": "e3c46627-efc0-43ef-ad9a-cc2a45f663a4",
+      "name": "get cached token (booking)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "70075ecd-0b81-4d71-8f89-76e3b3d7183f",
+              "leftValue": "={{ $json.errors == undefined && $json.data.booking != null }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1136,
+        704
+      ],
+      "id": "abedbdd0-fbd3-42f0-aaef-e96289b07e36",
+      "name": "booking detail ok?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0cabb407-cf3c-481d-9e2a-2c9f414d5d73",
+              "leftValue": "={{ $json.error.status }}",
+              "rightValue": 401,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "1c655d52-c923-4864-83f7-a3e3f9ceaf7a",
+              "leftValue": "={{ $runIndex }}",
+              "rightValue": 2,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        864
+      ],
+      "id": "3a68f914-63ca-46b2-b70a-9da21a356d6b",
+      "name": "booking 401?"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "WV7VNLUn8KXCm7CB",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/WV7VNLUn8KXCm7CB",
+          "cachedResultName": "[Util] Get Admin Token"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "_": "\"\""
+          },
+          "matchingColumns": [
+            "_"
+          ],
+          "schema": [
+            {
+              "id": "_",
+              "displayName": "_",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1136,
+        960
+      ],
+      "id": "7a8c4ab9-0cc1-411b-888e-8e1ebaafe8b2",
+      "name": "refresh token (booking)",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "543062e3-06eb-4a15-b9ec-d933c2fe0668",
+              "name": "error.message",
+              "value": "={{ $json.errors[0].message ?? 'GraphQL booking error' }}",
+              "type": "string"
+            },
+            {
+              "id": "4bab8733-c734-4c48-9d59-4f872728ea56",
+              "name": "error.source_node",
+              "value": "get booking detail",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2592,
+        960
+      ],
+      "id": "a0064bb4-abf7-431c-affa-69df0418b13e",
+      "name": "set error (booking)"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "VIEM0LV7HvcRdVdS",
+          "mode": "list",
+          "cachedResultName": "cached_api_tokens",
+          "cachedResultUrl": "/projects/qGxCtHEgXOeb7UXZ/datatables/VIEM0LV7HvcRdVdS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "credential_name",
+              "keyValue": "n8n"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2368,
+        464
+      ],
+      "id": "d62c8c0b-16cf-4944-9078-1ef62b72e3b4",
+      "name": "get cached token (done)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0cabb407-cf3c-481d-9e2a-2c9f414d5d73",
+              "leftValue": "={{ $json.error.status }}",
+              "rightValue": 401,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "1c655d52-c923-4864-83f7-a3e3f9ceaf7a",
+              "leftValue": "={{ $runIndex }}",
+              "rightValue": 2,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2816,
+        480
+      ],
+      "id": "eedd27c6-053f-42b2-a51f-c640549a6725",
+      "name": "booking done 401?"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "WV7VNLUn8KXCm7CB",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/WV7VNLUn8KXCm7CB",
+          "cachedResultName": "[Util] Get Admin Token"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "_": "\"\""
+          },
+          "matchingColumns": [
+            "_"
+          ],
+          "schema": [
+            {
+              "id": "_",
+              "displayName": "_",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3056,
+        464
+      ],
+      "id": "ae761460-9c48-4622-8ccd-49bb46969c72",
+      "name": "refresh token (done)",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "078402a8-28c2-4a44-aea7-121d669b5c85",
+              "leftValue": "={{ $json.line_group_chat_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1872,
+        672
+      ],
+      "id": "607b458b-2966-41d6-b58d-778f012fc9a6",
+      "name": "group id found?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "021571ee-5643-43bb-b740-aa35942b8f02",
+              "name": "error.message",
+              "value": "ไม่พบ dealer group ใน Google Sheets",
+              "type": "string"
+            },
+            {
+              "id": "d95e0dc8-d6f7-481f-acbc-3af68ff50cd5",
+              "name": "error.source_node",
+              "value": "get dealer group id",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2592,
+        672
+      ],
+      "id": "73ef7e62-c5f1-4371-a6b7-4d1fab1c5b31",
+      "name": "set error (group id)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"channel\": \"{{ $('config').first().json.slack_error_channel }}\",\n  \"attachments\": [\n    {\n      \"color\": \"#E53935\",\n      \"blocks\": [\n        {\n          \"type\": \"section\",\n          \"text\": {\n            \"type\": \"mrkdwn\",\n            \"text\": \":warning: *Dealer Notify — Error*\"\n          }\n        },\n        {\n          \"type\": \"section\",\n          \"fields\": [\n            { \"type\": \"mrkdwn\", \"text\": \"*Node ที่ fail:*\\n`{{ $json.error?.source_node ?? $prevNode.name }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Booking ID:*\\n`{{ $('extract booking id').first().json.booking_id ?? 'N/A' }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Execution ID:*\\n`{{ $execution.id }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*เวลา:*\\n{{ $now.setZone('Asia/Bangkok').toFormat('dd/MM/yyyy HH:mm') }}\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Dealer:*\\n{{ $('get booking detail').item?.json?.data?.booking?.dealership?.name ?? 'N/A' }}\\n`{{ $('get booking detail').item?.json?.data?.booking?.dealership_uuid ?? 'N/A' }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Branch:*\\n{{ $('get booking detail').item?.json?.data?.booking?.branch?.name ?? 'N/A' }}\\n`{{ $('get booking detail').item?.json?.data?.booking?.branch_uuid ?? 'N/A' }}`\" }\n          ]\n        },\n        {\n          \"type\": \"section\",\n          \"text\": {\n            \"type\": \"mrkdwn\",\n            \"text\": \":x: *Error*\\n```{{ JSON.stringify($json.error?.message ?? $json.error ?? '(no message)').slice(1,-1) }}```\"\n          }\n        },\n        {\n          \"type\": \"actions\",\n          \"elements\": [\n            {\n              \"type\": \"button\",\n              \"text\": { \"type\": \"plain_text\", \"text\": \"ดู Execution ใน n8n\" },\n              \"url\": \"https://nonprd-n8n.drivehub.co/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}\",\n              \"style\": \"danger\"\n            },\n            {\n              \"type\": \"button\",\n              \"text\": { \"type\": \"plain_text\", \"text\": \"เปิด Manage\" },\n              \"url\": \"https://manage.drivehub.co/admin/home\"\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3360,
+        864
+      ],
+      "id": "c1e545a0-b04d-4a59-a20a-fe03b319a187",
+      "name": "slack error alert",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "sIdsmEfNyu8GM5as",
+          "name": "Slack Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "LDl7hQHUtwNcGVrY",
+          "mode": "list",
+          "cachedResultName": "dealer_error_log_table",
+          "cachedResultUrl": "/projects/qGxCtHEgXOeb7UXZ/datatables/LDl7hQHUtwNcGVrY"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "booking_id": "={{ $('extract booking id').first().json.booking_id }}",
+            "failed_node": "={{ $prevNode.name }}",
+            "error_context": "={{ $json.error_context ?? $json.error?.message ?? 'N/A' }}",
+            "execution_id": "={{ $execution.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "booking_id",
+              "displayName": "booking_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "failed_node",
+              "displayName": "failed_node",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "error_context",
+              "displayName": "error_context",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3584,
+        880
+      ],
+      "id": "2f2ea782-5fc2-47b1-9332-801362a22c8c",
+      "name": "log error to table"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "70075ecd-0b81-4d71-8f89-76e3b3d7183f",
+              "leftValue": "={{ $json.errors === undefined && $json.data.adminDoneBooking != null }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2816,
+        320
+      ],
+      "id": "0e528525-7bb6-425b-9354-2c8d42b325ba",
+      "name": "booking done ok?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "70075ecd-0b81-4d71-8f89-76e3b3d7183f",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1616,
+        688
+      ],
+      "id": "24bfa884-1d91-4952-90d0-133fc533fe19",
+      "name": "sheet ok?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "543062e3-06eb-4a15-b9ec-d933c2fe0668",
+              "name": "error.message",
+              "value": "=เข้า Googlesheet ไม่ได้: {{ $json.error?.message ?? $json.error ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "4bab8733-c734-4c48-9d59-4f872728ea56",
+              "name": "error.source_node",
+              "value": "get dealer group id",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2592,
+        816
+      ],
+      "id": "8b82bb10-be61-4b20-b7eb-5498fa3d6411",
+      "name": "set error (sheet)"
+    },
+    {
+      "parameters": {
+        "content": "## 🚨 คู่มือทีม Ops — ทำยังไงเมื่อมีปัญหา\n\n### เคส 1: Server down (แจ้งใน channel dev)\n\n1. เห็นแจ้งเตือน \"n8n down\" → เข้าหลังบ้าน ดู booking ที่**ยังไม่มี Done**\n2. Copy booking detail ส่งเข้า LINE group ของ dealer เอง\n3. **ส่งเสร็จ 1 ใบ → กดปุ่ม Done ทันที 1 ใบ** (ห้ามรวบไปกดทีหลัง!)\n4. ทำวนไปจนกว่า server จะกลับมา\n\n### เคส 2: Server กลับมา (bot แจ้งใน channel ops)\n\nBot จะสรุปให้ว่ามี booking ค้างกี่ใบ เลขอะไรบ้าง\n\n1. อ่านข้อความ: **operation ส่งทั้งหมดถึงเลขที่ bot ระบุ** เป็นตัวสุดท้าย\n2. Booking ใหม่หลังจากเลขนั้น → bot ส่งเอง\n3. ส่งครบแล้วไล่เช็กกับรายการในข้อความอีกรอบว่าไม่ตกหล่น\n4. อย่าลืมกด Done ทุกใบที่ส่ง\n\n### เคส 3: Error รายใบ (แจ้งใน channel error)\n\nข้อความจะบอก booking ID + node ที่พัง\n\n1. เช็กใน LINE group ว่า booking นั้นถูกส่งไปแล้วหรือยัง\n2. ยังไม่ถูกส่ง → ส่ง manual + กด Done\n3. ส่งแล้วแต่ error ตอน mark done → กด Done ในหลังบ้านอย่างเดียวพอ\n4. แจ้งทีม dev\n\n**Note:** error log table = fallback เมื่อ Slack พังเท่านั้น\n\n---\n💡 กฎเหล็กข้อเดียว: **ส่งแล้วต้องกด Done ทันที** — bot ใช้สถานะนี้ตัดสินใจว่าจะส่งซ้ำหรือไม่",
+        "height": 800,
+        "width": 640
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -976,
+        -32
+      ],
+      "typeVersion": 1,
+      "id": "2a516f0f-b173-4f13-a161-cb22b1051078",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0069412d-3397-445c-a768-0d92a48f20dd",
+              "name": "max_id",
+              "value": "={{ Math.max(...$('extract booking id').all().map(i => Number(i.json.booking_id))) }}",
+              "type": "number"
+            },
+            {
+              "id": "c930d5f3-7090-43d4-b54d-1321230e8f50",
+              "name": "oldest_age_min",
+              "value": "={{ Math.round((Date.now() - Math.min(...$('GetNewBookingGmail').all().map(i => i.json.internalDate ? Number(i.json.internalDate) : new Date(i.json.date).getTime()))) / 60000) }}",
+              "type": "number"
+            },
+            {
+              "id": "e156f744-1445-4f3f-90ad-a29ae974719c",
+              "name": "is_backlog",
+              "value": "={{ $('GetNewBookingGmail').all().length > 1 && (Date.now() - Math.min(...$('GetNewBookingGmail').all().map(i => i.json.internalDate ? Number(i.json.internalDate) : new Date(i.json.date).getTime()))) / 60000 > Number($('config').first().json.backlog_threshold_min) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "74aa6aeb-6b16-4671-a359-451f5c9641d6",
+              "name": "backlog_ids",
+              "value": "={{ $('extract booking id').all().map(i => Number(i.json.booking_id)).sort((a,b) => a-b).map(v => '#'+v).join(', ') }}",
+              "type": "string"
+            },
+            {
+              "id": "01004401-9ec5-44dd-9a95-05c88e1ab99b",
+              "name": "item_count",
+              "value": "={{ $('GetNewBookingGmail').all().length }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        560
+      ],
+      "id": "bbee7462-f85a-4dc7-b0da-5a134630b565",
+      "name": "backlog flags"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "49af8e27-f052-4a00-b10e-a5dce0b6dd19",
+              "leftValue": "={{ $json.is_backlog }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        560
+      ],
+      "id": "8bd27185-f770-4f65-8bec-8bbb583bec6a",
+      "name": "backlog mode?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://slack.com/api/chat.postMessage",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"channel\": \"{{ $('config').first().json.slack_ops_channel }}\",\n  \"text\": \"🟢 n8n กลับมาทำงานแล้ว — มี booking ค้าง {{ $json.item_count }} รายการ\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": { \"type\": \"plain_text\", \"text\": \"🟢 n8n กลับมาทำงานแล้ว\", \"emoji\": true }\n    },\n    {\n      \"type\": \"section\",\n      \"text\": { \"type\": \"mrkdwn\", \"text\": \"🙏 ส่ง manual ทั้งหมด *ถึง #{{ $json.max_id }}* เป็นตัวสุดท้าย (+ กด *Done* ในหลังบ้านทุกตัวที่ส่ง)\\n🤖 Booking ใหม่หลัง #{{ $json.max_id }} bot จะส่งเองตามปกติ\" }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        272,
+        544
+      ],
+      "id": "d73041f3-7bf3-4e01-9b00-f25e1f88adee",
+      "name": "slack backlog alert",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "executeOnce": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "sIdsmEfNyu8GM5as",
+          "name": "Slack Header Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0cabb407-cf3c-481d-9e2a-2c9f414d5d73",
+              "leftValue": "={{ $json.data.booking.done }}",
+              "rightValue": 401,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        688
+      ],
+      "id": "f0446378-fe36-4119-b4a7-d316d98b75dd",
+      "name": "booking done?"
+    }
+  ],
+  "pinData": {
+    "GetNewBookingGmail": [
+      {
+        "json": {
+          "id": "19f400826fd8f317",
+          "threadId": "19f400826fd8f317",
+          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3608163 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ testfour testfour +66123456468 testfour@gmail.co ข้อมูลบริษัทรถเช่า C00306 ไลออนส์คาร์เรนท์ สาขา",
+          "payload": {
+            "mimeType": "text/html"
+          },
+          "sizeEstimate": 128500,
+          "historyId": "1990671",
+          "internalDate": "1783485703000",
+          "labels": [
+            {
+              "id": "INBOX",
+              "name": "INBOX"
+            },
+            {
+              "id": "CATEGORY_UPDATES",
+              "name": "CATEGORY_UPDATES"
+            },
+            {
+              "id": "UNREAD",
+              "name": "UNREAD"
+            }
+          ],
+          "From": "Drivehub <no-reply@transaction.drivehub.co>",
+          "Subject": "[ใช้ในการทดสอบระบบ][Drivehub] #3608163- คุณได้รับการจองใหม่จาก DRIVEHUB",
+          "To": "test@drivehub.co"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "id": "19f4007a72f1881f",
+          "threadId": "19f4007a72f1881f",
+          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3608162 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ testthree testthree +66123456464 testthree@gmail.com ข้อมูลบริษัทรถเช่า C00306 ไลออนส์คาร์เรนท์ สาขา",
+          "payload": {
+            "mimeType": "text/html"
+          },
+          "sizeEstimate": 128505,
+          "historyId": "1990557",
+          "internalDate": "1783485670000",
+          "labels": [
+            {
+              "id": "INBOX",
+              "name": "INBOX"
+            },
+            {
+              "id": "CATEGORY_UPDATES",
+              "name": "CATEGORY_UPDATES"
+            },
+            {
+              "id": "UNREAD",
+              "name": "UNREAD"
+            }
+          ],
+          "From": "Drivehub <no-reply@transaction.drivehub.co>",
+          "Subject": "[ใช้ในการทดสอบระบบ][Drivehub] #3608162- คุณได้รับการจองใหม่จาก DRIVEHUB",
+          "To": "test@drivehub.co"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "id": "19f40072d072c47d",
+          "threadId": "19f40072d072c47d",
+          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3608161 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ testtwo testtwo +66123456465 testtwo@gmail.com ข้อมูลบริษัทรถเช่า C00166 Urban Car Rental สาขา",
+          "payload": {
+            "mimeType": "text/html"
+          },
+          "sizeEstimate": 128322,
+          "historyId": "1990443",
+          "internalDate": "1783485639000",
+          "labels": [
+            {
+              "id": "INBOX",
+              "name": "INBOX"
+            },
+            {
+              "id": "CATEGORY_UPDATES",
+              "name": "CATEGORY_UPDATES"
+            },
+            {
+              "id": "UNREAD",
+              "name": "UNREAD"
+            }
+          ],
+          "From": "Drivehub <no-reply@transaction.drivehub.co>",
+          "Subject": "[ใช้ในการทดสอบระบบ][Drivehub] #3608161- คุณได้รับการจองใหม่จาก DRIVEHUB",
+          "To": "test@drivehub.co"
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "id": "19f4006b3af0aa80",
+          "threadId": "19f4006b3af0aa80",
+          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3608160 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ testone testone +66123156465 testone@gmail.com ข้อมูลบริษัทรถเช่า C00166 Urban Car Rental สาขา",
+          "payload": {
+            "mimeType": "text/html"
+          },
+          "sizeEstimate": 128319,
+          "historyId": "1990329",
+          "internalDate": "1783485607000",
+          "labels": [
+            {
+              "id": "INBOX",
+              "name": "INBOX"
+            },
+            {
+              "id": "CATEGORY_UPDATES",
+              "name": "CATEGORY_UPDATES"
+            },
+            {
+              "id": "UNREAD",
+              "name": "UNREAD"
+            }
+          ],
+          "From": "Drivehub <no-reply@transaction.drivehub.co>",
+          "Subject": "[ใช้ในการทดสอบระบบ][Drivehub] #3608160- คุณได้รับการจองใหม่จาก DRIVEHUB",
+          "To": "test@drivehub.co"
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      }
+    ]
+  },
+  "connections": {
+    "GetNewBookingGmail": {
+      "main": [
+        [
+          {
+            "node": "config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get dealer group id": {
+      "main": [
+        [
+          {
+            "node": "sheet ok?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "get booking detail": {
+      "main": [
+        [
+          {
+            "node": "booking done?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "booking 401?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract booking id": {
+      "main": [
+        [
+          {
+            "node": "get cached token (booking)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "push to dealer line": {
+      "main": [
+        [
+          {
+            "node": "get cached token (done)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "post booking done": {
+      "main": [
+        [
+          {
+            "node": "booking done ok?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "booking done 401?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "config": {
+      "main": [
+        [
+          {
+            "node": "extract booking id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get cached token (booking)": {
+      "main": [
+        [
+          {
+            "node": "get booking detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "booking detail ok?": {
+      "main": [
+        [
+          {
+            "node": "get dealer group id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "set error (booking)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "booking 401?": {
+      "main": [
+        [
+          {
+            "node": "refresh token (booking)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "refresh token (booking)": {
+      "main": [
+        [
+          {
+            "node": "get cached token (booking)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set error (booking)": {
+      "main": [
+        [
+          {
+            "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get cached token (done)": {
+      "main": [
+        [
+          {
+            "node": "post booking done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "booking done 401?": {
+      "main": [
+        [
+          {
+            "node": "refresh token (done)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "refresh token (done)": {
+      "main": [
+        [
+          {
+            "node": "get cached token (done)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "group id found?": {
+      "main": [
+        [
+          {
+            "node": "push to dealer line",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "set error (group id)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set error (group id)": {
+      "main": [
+        [
+          {
+            "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "slack error alert": {
+      "main": [
+        [],
+        [
+          {
+            "node": "log error to table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "booking done ok?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sheet ok?": {
+      "main": [
+        [
+          {
+            "node": "group id found?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "set error (sheet)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set error (sheet)": {
+      "main": [
+        [
+          {
+            "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "backlog flags": {
+      "main": [
+        [
+          {
+            "node": "backlog mode?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "backlog mode?": {
+      "main": [
+        [
+          {
+            "node": "slack backlog alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "booking done?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "booking detail ok?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "df9a8b00-c911-4e97-8a00-0767144b847f",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
+  },
+  "nodeGroups": [],
+  "id": "VYOi3gDUer5L9yvH",
+  "tags": []
+}

@@ -1,0 +1,36 @@
+{
+  "name": "Get Line Group ID",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dealer-line",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -64,
+        -16
+      ],
+      "id": "91a6635b-a9c5-4988-aec2-a009f346b6d5",
+      "name": "GetGroupId",
+      "webhookId": "179646a8-d34f-4ffb-9f04-5932ebe403a8"
+    }
+  ],
+  "pinData": {},
+  "connections": {},
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ecb9ea70-7aaf-4372-a00b-138db42a4cec",
+  "meta": {
+    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
+  },
+  "nodeGroups": [],
+  "id": "zUakvzhFhwCEfeXV",
+  "tags": []
+}
