@@ -17,15 +17,15 @@
       "type": "n8n-nodes-base.gmailTrigger",
       "typeVersion": 1.3,
       "position": [
-        -352,
-        848
+        -544,
+        976
       ],
       "id": "a5678d8c-4156-48ea-a7af-a6c095548d09",
       "name": "GetNewBookingGmail",
       "credentials": {
         "gmailOAuth2": {
           "id": "wqlOQpAtr6EAUg84",
-          "name": "[Dev] Operation Gmail account"
+          "name": "Buddy AI Gmail account"
         }
       }
     },
@@ -33,17 +33,13 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "1otDehzSZanv_UdqVMwYI3W7oqypRILEqUOQSgUkTehs",
-          "mode": "list",
-          "cachedResultName": "[N8N] Dealer Line Group UID",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1otDehzSZanv_UdqVMwYI3W7oqypRILEqUOQSgUkTehs/edit?usp=drivesdk"
+          "value": "={{ $('config').first().json.dealer_group_uid_sheet_url }}",
+          "mode": "url"
         },
         "sheetName": {
           "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1otDehzSZanv_UdqVMwYI3W7oqypRILEqUOQSgUkTehs/edit#gid=0"
+          "value": "Sheet1",
+          "mode": "name"
         },
         "filtersUI": {
           "values": [
@@ -78,7 +74,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('config').first().json.base_url }}/drivehubv3-api-graphql/query",
+        "url": "={{ $('config').first().json.graphql_url }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -127,8 +123,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        96,
-        848
+        80,
+        976
       ],
       "id": "8a327b02-255d-4344-bfa8-c3ad3f211b7d",
       "name": "extract booking id"
@@ -167,7 +163,7 @@
       "credentials": {
         "httpBearerAuth": {
           "id": "wnEM9E2aVqJcfDpe",
-          "name": "LINE OA Dealer — Token (DEV)"
+          "name": "[Dev] LINE OA Dealer — Token"
         }
       },
       "onError": "continueErrorOutput"
@@ -175,7 +171,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $('config').first().json.base_url }}/drivehubv3-api-graphql/query",
+        "url": "={{ $('config').first().json.graphql_url }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -213,32 +209,44 @@
           "assignments": [
             {
               "id": "d4c14aee-9d49-400d-bc19-490171424802",
-              "name": "base_url",
-              "value": "https://dev-api-gw.drivehub.co",
+              "name": "graphql_url",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DRIVEHUBV3_GRAPHQL_PATH').json.value }}",
               "type": "string"
             },
             {
               "id": "b230289c-85bb-44c1-827d-76172ff18ce1",
               "name": "manage_url",
-              "value": "https://dev-manage.drivehub.local",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DRIVEHUB_MANAGE_URL').json.value }}",
               "type": "string"
             },
             {
               "id": "758813f6-6613-4e13-933a-711bca503c2f",
               "name": "slack_ops_channel",
-              "value": "n8n-op_dev-notification",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'SLACK_OPS_CHANNEL').json.value }}",
               "type": "string"
             },
             {
               "id": "d12c8ff5-948d-4bbc-a480-9caff295810f",
               "name": "slack_error_channel",
-              "value": "n8n-chat-notification",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'SLACK_ERROR_CHANNEL').json.value }}",
               "type": "string"
             },
             {
-              "id": "c1b7cd9e-5a5f-43c6-946c-8a78d4986a12",
-              "name": "backlog_threshold_min",
-              "value": "5",
+              "id": "2ea1e8f0-a658-44d1-9da1-83d8c5a5a3bb",
+              "name": "dealer_group_uid_sheet_url",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DEALER_GROUP_UID_SHEET_URL').json.value }}",
+              "type": "string"
+            },
+            {
+              "id": "ee42c164-fe14-4d99-9b1d-731a301c1379",
+              "name": "n8n_base_url",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'N8N_BASE_URL').json.value }}",
+              "type": "string"
+            },
+            {
+              "id": "6fcbb066-f2c2-4f07-9feb-871c78e00ec4",
+              "name": "get_admin_token_flow_id",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'GET_ADMIN_TOKEN_FLOW_ID').json.value }}",
               "type": "string"
             }
           ]
@@ -248,11 +256,12 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -128,
-        848
+        -96,
+        832
       ],
       "id": "bbea7cf3-322a-4f9d-8035-d92bf9fd97d3",
-      "name": "config"
+      "name": "config",
+      "executeOnce": true
     },
     {
       "parameters": {
@@ -275,10 +284,8 @@
         "operation": "get",
         "dataTableId": {
           "__rl": true,
-          "value": "VIEM0LV7HvcRdVdS",
-          "mode": "list",
-          "cachedResultName": "cached_api_tokens",
-          "cachedResultUrl": "/projects/qGxCtHEgXOeb7UXZ/datatables/VIEM0LV7HvcRdVdS"
+          "value": "cached_api_tokens",
+          "mode": "name"
         },
         "filters": {
           "conditions": [
@@ -379,16 +386,13 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "WV7VNLUn8KXCm7CB",
-          "mode": "list",
-          "cachedResultUrl": "/workflow/WV7VNLUn8KXCm7CB",
-          "cachedResultName": "[Util] Get Admin Token"
+          "value": "={{ $('config').first().json.get_admin_token_flow_id }}",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/=%7B%7B%20$('config').first().json.get_admin_token_flow_id%20%7D%7D"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
-          "value": {
-            "_": "\"\""
-          },
+          "value": {},
           "matchingColumns": [
             "_"
           ],
@@ -456,10 +460,8 @@
         "operation": "get",
         "dataTableId": {
           "__rl": true,
-          "value": "VIEM0LV7HvcRdVdS",
-          "mode": "list",
-          "cachedResultName": "cached_api_tokens",
-          "cachedResultUrl": "/projects/qGxCtHEgXOeb7UXZ/datatables/VIEM0LV7HvcRdVdS"
+          "value": "cached_api_tokens",
+          "mode": "name"
         },
         "filters": {
           "conditions": [
@@ -526,16 +528,13 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "WV7VNLUn8KXCm7CB",
-          "mode": "list",
-          "cachedResultUrl": "/workflow/WV7VNLUn8KXCm7CB",
-          "cachedResultName": "[Util] Get Admin Token"
+          "mode": "id",
+          "value": "={{ $('config').first().json.get_admin_token_flow_id }}",
+          "cachedResultName": "={{ $('config').first().json.get_admin_token_flow_id }}"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
-          "value": {
-            "_": "\"\""
-          },
+          "value": {},
           "matchingColumns": [
             "_"
           ],
@@ -640,7 +639,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"channel\": \"{{ $('config').first().json.slack_error_channel }}\",\n  \"attachments\": [\n    {\n      \"color\": \"#E53935\",\n      \"blocks\": [\n        {\n          \"type\": \"section\",\n          \"text\": {\n            \"type\": \"mrkdwn\",\n            \"text\": \":warning: *Dealer Notify — Error*\"\n          }\n        },\n        {\n          \"type\": \"section\",\n          \"fields\": [\n            { \"type\": \"mrkdwn\", \"text\": \"*Node ที่ fail:*\\n`{{ $json.error?.source_node ?? $prevNode.name }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Booking ID:*\\n`{{ $('extract booking id').first().json.booking_id ?? 'N/A' }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Execution ID:*\\n`{{ $execution.id }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*เวลา:*\\n{{ $now.setZone('Asia/Bangkok').toFormat('dd/MM/yyyy HH:mm') }}\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Dealer:*\\n{{ $('get booking detail').item?.json?.data?.booking?.dealership?.name ?? 'N/A' }}\\n`{{ $('get booking detail').item?.json?.data?.booking?.dealership_uuid ?? 'N/A' }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Branch:*\\n{{ $('get booking detail').item?.json?.data?.booking?.branch?.name ?? 'N/A' }}\\n`{{ $('get booking detail').item?.json?.data?.booking?.branch_uuid ?? 'N/A' }}`\" }\n          ]\n        },\n        {\n          \"type\": \"section\",\n          \"text\": {\n            \"type\": \"mrkdwn\",\n            \"text\": \":x: *Error*\\n```{{ JSON.stringify($json.error?.message ?? $json.error ?? '(no message)').slice(1,-1) }}```\"\n          }\n        },\n        {\n          \"type\": \"actions\",\n          \"elements\": [\n            {\n              \"type\": \"button\",\n              \"text\": { \"type\": \"plain_text\", \"text\": \"ดู Execution ใน n8n\" },\n              \"url\": \"https://nonprd-n8n.drivehub.co/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}\",\n              \"style\": \"danger\"\n            },\n            {\n              \"type\": \"button\",\n              \"text\": { \"type\": \"plain_text\", \"text\": \"เปิด Manage\" },\n              \"url\": \"https://manage.drivehub.co/admin/home\"\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"channel\": \"{{ $('config').first().json.slack_error_channel }}\",\n  \"attachments\": [\n    {\n      \"color\": \"#E53935\",\n      \"blocks\": [\n        {\n          \"type\": \"section\",\n          \"text\": {\n            \"type\": \"mrkdwn\",\n            \"text\": \":warning: *Dealer Notify — Error*\"\n          }\n        },\n        {\n          \"type\": \"section\",\n          \"fields\": [\n            { \"type\": \"mrkdwn\", \"text\": \"*Node ที่ fail:*\\n`{{ $json.error?.source_node ?? $prevNode.name }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Booking ID:*\\n`{{ $('extract booking id').first().json.booking_id ?? 'N/A' }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Execution ID:*\\n`{{ $execution.id }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*เวลา:*\\n{{ $now.setZone('Asia/Bangkok').toFormat('dd/MM/yyyy HH:mm') }}\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Dealer:*\\n{{ $('get booking detail').item?.json?.data?.booking?.dealership?.name ?? 'N/A' }}\\n`{{ $('get booking detail').item?.json?.data?.booking?.dealership_uuid ?? 'N/A' }}`\" },\n            { \"type\": \"mrkdwn\", \"text\": \"*Branch:*\\n{{ $('get booking detail').item?.json?.data?.booking?.branch?.name ?? 'N/A' }}\\n`{{ $('get booking detail').item?.json?.data?.booking?.branch_uuid ?? 'N/A' }}`\" }\n          ]\n        },\n        {\n          \"type\": \"section\",\n          \"text\": {\n            \"type\": \"mrkdwn\",\n            \"text\": \":x: *Error*\\n```{{ JSON.stringify($json.error?.message ?? $json.error ?? '(no message)').slice(1,-1) }}```\"\n          }\n        },\n        {\n          \"type\": \"actions\",\n          \"elements\": [\n            {\n              \"type\": \"button\",\n              \"text\": { \"type\": \"plain_text\", \"text\": \"ดู Execution ใน n8n\" },\n              \"url\": \"{{ $('config').first().json.n8n_base_url }}/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}\",\n              \"style\": \"danger\"\n            },\n            {\n              \"type\": \"button\",\n              \"text\": { \"type\": \"plain_text\", \"text\": \"เปิด Manage\" },\n              \"url\": \"{{ $('config').first().json.manage_url }}/admin/home\"\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -666,10 +665,8 @@
       "parameters": {
         "dataTableId": {
           "__rl": true,
-          "value": "LDl7hQHUtwNcGVrY",
-          "mode": "list",
-          "cachedResultName": "dealer_error_log_table",
-          "cachedResultUrl": "/projects/qGxCtHEgXOeb7UXZ/datatables/LDl7hQHUtwNcGVrY"
+          "value": "notification_retry_queues",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -1003,21 +1000,40 @@
       ],
       "id": "f0446378-fe36-4119-b4a7-d316d98b75dd",
       "name": "booking done?"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "environment_variables",
+          "mode": "name"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -304,
+        832
+      ],
+      "id": "adcbf1ff-e928-4eaf-a195-2407352c0898",
+      "name": "get env",
+      "executeOnce": true
     }
   ],
   "pinData": {
     "GetNewBookingGmail": [
       {
         "json": {
-          "id": "19f400826fd8f317",
-          "threadId": "19f400826fd8f317",
-          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3608163 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ testfour testfour +66123456468 testfour@gmail.co ข้อมูลบริษัทรถเช่า C00306 ไลออนส์คาร์เรนท์ สาขา",
+          "id": "19f4b18e06990f2e",
+          "threadId": "19f4b18e06990f2e",
+          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3608180 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ test test +66165456465 test@gmail.com ข้อมูลบริษัทรถเช่า C00166 Urban Car Rental สาขา ปทุมธานี ข้อมูล",
           "payload": {
             "mimeType": "text/html"
           },
-          "sizeEstimate": 128500,
-          "historyId": "1990671",
-          "internalDate": "1783485703000",
+          "sizeEstimate": 128309,
+          "historyId": "1993502",
+          "internalDate": "1783671348000",
           "labels": [
             {
               "id": "INBOX",
@@ -1033,110 +1049,11 @@
             }
           ],
           "From": "Drivehub <no-reply@transaction.drivehub.co>",
-          "Subject": "[ใช้ในการทดสอบระบบ][Drivehub] #3608163- คุณได้รับการจองใหม่จาก DRIVEHUB",
+          "Subject": "[ใช้ในการทดสอบระบบ][Drivehub] #3608180- คุณได้รับการจองใหม่จาก DRIVEHUB",
           "To": "test@drivehub.co"
         },
         "pairedItem": {
           "item": 0
-        }
-      },
-      {
-        "json": {
-          "id": "19f4007a72f1881f",
-          "threadId": "19f4007a72f1881f",
-          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3608162 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ testthree testthree +66123456464 testthree@gmail.com ข้อมูลบริษัทรถเช่า C00306 ไลออนส์คาร์เรนท์ สาขา",
-          "payload": {
-            "mimeType": "text/html"
-          },
-          "sizeEstimate": 128505,
-          "historyId": "1990557",
-          "internalDate": "1783485670000",
-          "labels": [
-            {
-              "id": "INBOX",
-              "name": "INBOX"
-            },
-            {
-              "id": "CATEGORY_UPDATES",
-              "name": "CATEGORY_UPDATES"
-            },
-            {
-              "id": "UNREAD",
-              "name": "UNREAD"
-            }
-          ],
-          "From": "Drivehub <no-reply@transaction.drivehub.co>",
-          "Subject": "[ใช้ในการทดสอบระบบ][Drivehub] #3608162- คุณได้รับการจองใหม่จาก DRIVEHUB",
-          "To": "test@drivehub.co"
-        },
-        "pairedItem": {
-          "item": 1
-        }
-      },
-      {
-        "json": {
-          "id": "19f40072d072c47d",
-          "threadId": "19f40072d072c47d",
-          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3608161 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ testtwo testtwo +66123456465 testtwo@gmail.com ข้อมูลบริษัทรถเช่า C00166 Urban Car Rental สาขา",
-          "payload": {
-            "mimeType": "text/html"
-          },
-          "sizeEstimate": 128322,
-          "historyId": "1990443",
-          "internalDate": "1783485639000",
-          "labels": [
-            {
-              "id": "INBOX",
-              "name": "INBOX"
-            },
-            {
-              "id": "CATEGORY_UPDATES",
-              "name": "CATEGORY_UPDATES"
-            },
-            {
-              "id": "UNREAD",
-              "name": "UNREAD"
-            }
-          ],
-          "From": "Drivehub <no-reply@transaction.drivehub.co>",
-          "Subject": "[ใช้ในการทดสอบระบบ][Drivehub] #3608161- คุณได้รับการจองใหม่จาก DRIVEHUB",
-          "To": "test@drivehub.co"
-        },
-        "pairedItem": {
-          "item": 2
-        }
-      },
-      {
-        "json": {
-          "id": "19f4006b3af0aa80",
-          "threadId": "19f4006b3af0aa80",
-          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3608160 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ testone testone +66123156465 testone@gmail.com ข้อมูลบริษัทรถเช่า C00166 Urban Car Rental สาขา",
-          "payload": {
-            "mimeType": "text/html"
-          },
-          "sizeEstimate": 128319,
-          "historyId": "1990329",
-          "internalDate": "1783485607000",
-          "labels": [
-            {
-              "id": "INBOX",
-              "name": "INBOX"
-            },
-            {
-              "id": "CATEGORY_UPDATES",
-              "name": "CATEGORY_UPDATES"
-            },
-            {
-              "id": "UNREAD",
-              "name": "UNREAD"
-            }
-          ],
-          "From": "Drivehub <no-reply@transaction.drivehub.co>",
-          "Subject": "[ใช้ในการทดสอบระบบ][Drivehub] #3608160- คุณได้รับการจองใหม่จาก DRIVEHUB",
-          "To": "test@drivehub.co"
-        },
-        "pairedItem": {
-          "item": 3
         }
       }
     ]
@@ -1146,7 +1063,12 @@
       "main": [
         [
           {
-            "node": "config",
+            "node": "get env",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "extract booking id",
             "type": "main",
             "index": 0
           }
@@ -1232,13 +1154,7 @@
     },
     "config": {
       "main": [
-        [
-          {
-            "node": "extract booking id",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "get cached token (booking)": {
@@ -1480,6 +1396,17 @@
           }
         ]
       ]
+    },
+    "get env": {
+      "main": [
+        [
+          {
+            "node": "config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -1488,7 +1415,7 @@
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "df9a8b00-c911-4e97-8a00-0767144b847f",
+  "versionId": "75199afc-df05-4c45-bd8e-36e43b767940",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp",

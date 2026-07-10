@@ -1,5 +1,5 @@
 {
-  "name": "Get Line Group ID",
+  "name": "[Util] Get Line Group ID",
   "nodes": [
     {
       "parameters": {
@@ -10,8 +10,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -192,
-        -16
+        -624,
+        112
       ],
       "id": "91a6635b-a9c5-4988-aec2-a009f346b6d5",
       "name": "GetGroupId",
@@ -29,13 +29,13 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        736,
-        -16
+        304,
+        224
       ],
       "credentials": {
         "httpBearerAuth": {
           "id": "wnEM9E2aVqJcfDpe",
-          "name": "LINE OA Dealer — Token (DEV)"
+          "name": "Dealer LINE OA Auth"
         }
       }
     },
@@ -44,18 +44,18 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/149sx5IRnixX3LaPGl3m8MxxLkFS1T4F4TJOs1G9E4d0/edit?gid=0#gid=0"
+          "value": "={{ $('config').first().json.dealer_group_mapping_sheet_url }}",
+          "mode": "url"
         },
         "sheetName": {
           "__rl": true,
-          "mode": "url",
-          "value": "https://docs.google.com/spreadsheets/d/149sx5IRnixX3LaPGl3m8MxxLkFS1T4F4TJOs1G9E4d0/edit?gid=0#gid=0"
+          "value": "dealer_groups",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "group_id": "={{ $('Extract Register Event').item.json.groupId }}",
+            "group_id": "={{ $json.groupId }}",
             "group_name": "={{ $json.groupName }}",
             "registered_at": "={{ $now.setZone('Asia/Bangkok').toFormat('yyyy-MM-dd HH:mm:ss') }}"
           },
@@ -99,8 +99,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        960,
-        -16
+        528,
+        224
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -125,13 +125,13 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1184,
-        -16
+        752,
+        224
       ],
       "credentials": {
         "httpBearerAuth": {
           "id": "wnEM9E2aVqJcfDpe",
-          "name": "LINE OA Dealer — Token (DEV)"
+          "name": "Dealer LINE OA Auth"
         }
       }
     },
@@ -145,8 +145,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        48,
-        -16
+        -384,
+        224
       ]
     },
     {
@@ -205,8 +205,8 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.3,
       "position": [
-        272,
-        -16
+        -160,
+        224
       ]
     },
     {
@@ -246,9 +246,52 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        512,
-        -16
+        80,
+        224
       ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "668061ca-8602-48dd-8696-6b94cc8b12b1",
+              "name": "dealer_group_mapping_sheet_url",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DEALER_GROUP_MAPPING_SHEET_URL').json.value }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        -16
+      ],
+      "id": "ce91a79a-4598-42a2-89d9-562465b34298",
+      "name": "config",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "environment_variables",
+          "mode": "name"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -384,
+        -16
+      ],
+      "id": "be1fb36d-471b-4b3e-a3d1-4d7e01c6aa16",
+      "name": "get env",
+      "executeOnce": true
     }
   ],
   "pinData": {
@@ -260,12 +303,12 @@
             "x-forwarded-proto": "https",
             "x-forwarded-port": "443",
             "host": "nonprd-n8n.drivehub.co",
-            "x-amzn-trace-id": "Root=1-6a4f53ff-3a819b166533cbb15e8e303d",
+            "x-amzn-trace-id": "Root=1-6a4f5973-2441272910302bdb7e6c4585",
             "content-length": "1009",
             "user-agent": "LineBotWebhook/2.0",
             "content-type": "application/json; charset=utf-8",
             "x-forwarded-host": "potbellied-leopoldo-duodenary.ngrok-free.dev",
-            "x-line-signature": "EHhnuEyfXnQ75/mmFRT3deuSVqEGtgGmiZXIo51B3oY=",
+            "x-line-signature": "lYKeaUzcuYWoB2PNruT/UyQZXb4fz1HaukIh40v57Tw=",
             "accept-encoding": "gzip"
           },
           "params": {},
@@ -277,22 +320,22 @@
                 "type": "message",
                 "message": {
                   "type": "text",
-                  "id": "622019375297462941",
-                  "quoteToken": "z7ew7pWTbKGKBNMLO3L6YIDs35oJz8L64LUdAzXuyT-TkF5gO3TjCEMpOv2bAr4XKPDXemVHuwrZNBGjB2SIorOuUAsZLwSlbFJosERNs03ogTDsdo7WpKnCifkccTMc_dgDJqs9CUpVs5hzggznGg",
-                  "markAsReadToken": "vrsGWBzA4mxE-dbmDaCqw8lLpSNUmGBolM8JMPzwUVX0juEDan4odXDvQm-rfZwciddJxcVdTj6Ml3oiFPrrOOnSdI0uD3c5F1rHEwDb1DA8kJHwaE8q1kZoidqORoiBQlj6nxbwW6DdMfQfMK9gQXDNcsrvLzz0p-qozh1ANFHPU8vEihD_3k3MHKGv5Fjah0jWo99-hCgyD85eQs4wtA",
+                  "id": "622021717262860411",
+                  "quoteToken": "VvRxc-w1Fp4nqnRa_RBrn59Ua2t3nfOHfVtGisi9estapUjS80FH_wBllM3Xgd_3t00zKb6ICXPxlZdyX_g4TfUA6BnZTg3y6I_J3MGz6x6sNMhAmZWVDWuw8W8ruKJ2RDZeQKzvdY_28a0__tdRAQ",
+                  "markAsReadToken": "W32_oUTeTq6Y4xOhiuuVh_gwqRTzXA0Df6osJv1bdgBroLSfKUtWzYonFGLBdbQ3BS_SrRrqtHofZvhGDoeeRg2um9tjmDpeAEVPfK1cgyQ8z0fOGuJBDWB4RYVLEWUK_Z-zHq8DkjmnUvZ8NZ1WcbCDLrFkfRSSi-L9teFPveWIQs2tSXyL8YINDaaznIAcYbygT5OtaQ7bZzvf9m5IJA",
                   "text": "สวัสดีครับ ขออนุญาตเพิ่มบอทเข้ามาช่วยงานครับ\n#register [DEV] C00166 Urban Car Rental"
                 },
-                "webhookEventId": "01KX2Y07C3BDMWTAKSF5ZJX36B",
+                "webhookEventId": "01KX2ZATT4P90RCFR5N9D633P6",
                 "deliveryContext": {
                   "isRedelivery": false
                 },
-                "timestamp": 1783583743097,
+                "timestamp": 1783585139164,
                 "source": {
                   "type": "group",
                   "groupId": "C6520120d8a891f69a7cf35c68d8bf220",
                   "userId": "U93d574519e5052627fa355ec42374656"
                 },
-                "replyToken": "3f0c24c9b28e4b84af1a096274940660",
+                "replyToken": "f7dd107dd3e248e5b3890ee5ef9080e1",
                 "mode": "active"
               }
             ]
@@ -333,6 +376,11 @@
       "main": [
         [
           {
+            "node": "get env",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Split Out Events",
             "type": "main",
             "index": 0
@@ -372,6 +420,22 @@
           }
         ]
       ]
+    },
+    "config": {
+      "main": [
+        []
+      ]
+    },
+    "get env": {
+      "main": [
+        [
+          {
+            "node": "config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -380,7 +444,7 @@
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "8a59685f-1311-473d-89fa-2e6801d51857",
+  "versionId": "603c1a82-60ed-4703-bf60-5906ffbe4562",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp",

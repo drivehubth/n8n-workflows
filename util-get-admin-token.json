@@ -14,7 +14,7 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        496,
+        64,
         0
       ],
       "id": "5950ccff-f1da-4fb0-9536-305832567d49",
@@ -23,7 +23,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://dev-api-gw.drivehub.co/drivehubv3-api/api/admins/login",
+        "url": "={{ $json.admin_login_url }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -35,7 +35,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"email\": \"n8n.ai@drivehub.co\",\n  \"password\": \"1234567890\"\n}",
+        "jsonBody": "={\n  \"email\": \"{{ $json.admin_email }}\",\n  \"password\": \"{{ $json.admin_password }}\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -79,10 +79,8 @@
         "operation": "update",
         "dataTableId": {
           "__rl": true,
-          "value": "VIEM0LV7HvcRdVdS",
-          "mode": "list",
-          "cachedResultName": "cached_api_tokens",
-          "cachedResultUrl": "/projects/qGxCtHEgXOeb7UXZ/datatables/VIEM0LV7HvcRdVdS"
+          "value": "cached_api_tokens",
+          "mode": "name"
         },
         "filters": {
           "conditions": [
@@ -177,6 +175,61 @@
       ],
       "id": "f5979f30-649c-46d3-b578-2d29906275b5",
       "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "environment_variables",
+          "mode": "name"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        0
+      ],
+      "id": "09a6caa2-c4fe-45f4-aacd-4c844628f834",
+      "name": "get env",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c444bf3b-75b2-4c93-9911-255cb39f549f",
+              "name": "admin_login_url",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DRIVEHUBV3_ADMIN_LOGIN_PATH').json.value }}",
+              "type": "string"
+            },
+            {
+              "id": "9d3d44b8-bab4-4175-950e-b728dda9887b",
+              "name": "admin_email",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'ADMIN_EMAIL').json.value }}",
+              "type": "string"
+            },
+            {
+              "id": "29685317-6b43-469f-94b5-4e3051d04c34",
+              "name": "admin_password",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'ADMIN_PASSWORD').json.value }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        0
+      ],
+      "id": "ef78b6d6-4252-4e65-84ef-753fe8e88512",
+      "name": "config",
+      "executeOnce": true
     }
   ],
   "pinData": {
@@ -196,7 +249,7 @@
       "main": [
         [
           {
-            "node": "login",
+            "node": "get env",
             "type": "main",
             "index": 0
           }
@@ -231,6 +284,28 @@
           }
         ]
       ]
+    },
+    "get env": {
+      "main": [
+        [
+          {
+            "node": "config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "config": {
+      "main": [
+        [
+          {
+            "node": "login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -239,7 +314,7 @@
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "d3fd3662-d0e0-4dfe-a307-2eca3f983441",
+  "versionId": "827586ee-24ff-4af5-b196-90cf5fcd5175",
   "meta": {
     "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
   },
