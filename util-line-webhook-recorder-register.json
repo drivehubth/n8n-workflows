@@ -1,0 +1,1079 @@
+{
+  "name": "[Util] LINE Webhook — Recorder + Register",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🟢 [Dealer] LINE Webhook Hub — /dealer-line\n\nWebhook เดียว ทำ 2 หน้าที่ (แต่ละ event วิ่งทั้ง 2 branch แบบขนาน):\n\n**Branch 1 — Recorder:** บันทึกทุก text / image / sticker ในกลุ่ม dealer ลง Supabase (project: Drivehub)\n- รูปเก็บที่ Storage bucket `line-media/{group_id}/{message_id}.jpg`\n\n**Branch 2 — #register:** ลงทะเบียนกลุ่มใหม่ลง Google Sheet `dealer_groups` + reply ยืนยัน\n\nConfig มาจาก data table `environment_variables`: `SUPABASE_URL`, `DEALER_GROUP_MAPPING_SHEET_URL`",
+        "height": 400,
+        "width": 592,
+        "color": 4
+      },
+      "id": "132e46c1-e6d0-4eff-a544-49b6b501293e",
+      "name": "Sticky Note b8303402",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        768,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dealer-line",
+        "options": {}
+      },
+      "id": "d3f93b62-783d-4a77-a789-e64a358423ad",
+      "name": "LINE Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        784,
+        784
+      ],
+      "webhookId": "6dbafb40-c4bc-4884-9fca-f0e6a1cb4b35"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "environment_variables",
+          "mode": "name"
+        }
+      },
+      "id": "5aff1a46-f704-49db-bf28-a5212ce32a4c",
+      "name": "get env",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        592
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-supabase-url",
+              "name": "supabase_url",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'SUPABASE_URL').json.value }}",
+              "type": "string"
+            },
+            {
+              "id": "cfg-sheet-url",
+              "name": "dealer_group_mapping_sheet_url",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DEALER_GROUP_MAPPING_SHEET_URL').json.value }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9c3a5812-87a8-4a87-9b1e-839c82ecc351",
+      "name": "config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1232,
+        592
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.events",
+        "options": {}
+      },
+      "id": "97084219-108c-4aab-bfa5-5b3dfcbf5ad4",
+      "name": "Split Out Events",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "f-type",
+              "leftValue": "={{ $json.type }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "message"
+            },
+            {
+              "id": "f-source",
+              "leftValue": "={{ $json.source?.type }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "group"
+            },
+            {
+              "id": "f-msgtype",
+              "leftValue": "={{ [\"text\",\"image\",\"sticker\"].includes($json.message?.type ?? \"\") }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3282cc55-f690-4a38-af88-f40107fd945c",
+      "name": "Keep Group Messages",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "n-event-id",
+              "name": "event_id",
+              "value": "={{ $json.webhookEventId ?? $json.message?.id }}",
+              "type": "string"
+            },
+            {
+              "id": "n-msg-id",
+              "name": "line_message_id",
+              "value": "={{ $json.message?.id }}",
+              "type": "string"
+            },
+            {
+              "id": "n-group-id",
+              "name": "group_id",
+              "value": "={{ $json.source?.groupId }}",
+              "type": "string"
+            },
+            {
+              "id": "n-user-id",
+              "name": "user_id",
+              "value": "={{ $json.source?.userId ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "n-msg-type",
+              "name": "message_type",
+              "value": "={{ $json.message?.type }}",
+              "type": "string"
+            },
+            {
+              "id": "n-text",
+              "name": "text",
+              "value": "={{ $json.message?.text ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "n-stk-pkg",
+              "name": "sticker_package_id",
+              "value": "={{ $json.message?.packageId ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "n-stk-id",
+              "name": "sticker_id",
+              "value": "={{ $json.message?.stickerId ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "n-stk-kw",
+              "name": "sticker_keywords",
+              "value": "={{ ($json.message?.keywords ?? []).join(\", \") }}",
+              "type": "string"
+            },
+            {
+              "id": "n-sent-at",
+              "name": "sent_at",
+              "value": "={{ new Date($json.timestamp).toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "48c63d7b-9264-49f7-a086-76849289df4b",
+              "name": "quoted_message_id",
+              "value": "={{ $json.message?.quotedMessageId ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7878f382-a3a4-4c73-b3bf-de50a123174e",
+      "name": "Normalize Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.line.me/v2/bot/group/{{ $json.group_id }}/member/{{ $json.user_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "e755a94b-7928-4ccf-a866-f381eb1b3de5",
+      "name": "Get Sender Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1680,
+        784
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "wnEM9E2aVqJcfDpe",
+          "name": "Dealer LINE OA Auth"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.line.me/v2/bot/group/{{ $('Normalize Message').item.json.group_id }}/summary",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "c7902b36-d412-493a-b9df-89cd3bc6f2a1",
+      "name": "Get Group Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1904,
+        784
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "wnEM9E2aVqJcfDpe",
+          "name": "Dealer LINE OA Auth"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('config').first().json.supabase_url }}/rest/v1/line_groups?on_conflict=group_id",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ group_id: $('Normalize Message').item.json.group_id, group_name: $('Get Group Summary').item.json.groupName ?? null }) }}",
+        "options": {}
+      },
+      "id": "2931093f-a880-4742-97f5-6b3165eb240d",
+      "name": "Upsert Group",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2128,
+        784
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "supabaseApi": {
+          "id": "GVsySdQtwHCQHKwR",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "i-img",
+              "leftValue": "={{ $('Normalize Message').item.json.message_type }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "image"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "37c6d813-895b-4739-9a7c-7275d37ef211",
+      "name": "Is Image?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2352,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api-data.line.me/v2/bot/message/{{ $('Normalize Message').item.json.line_message_id }}/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "c3ea5903-a0c4-43fa-83f8-c578a266d553",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2576,
+        688
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "wnEM9E2aVqJcfDpe",
+          "name": "Dealer LINE OA Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('config').first().json.supabase_url }}/storage/v1/object/line-media/{{ $('Normalize Message').item.json.group_id }}/{{ $('Normalize Message').item.json.line_message_id }}.jpg",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-upsert",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "ff83542e-0147-4785-adbe-9fdad7cd8084",
+      "name": "Upload Image To Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2800,
+        592
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "supabaseApi": {
+          "id": "GVsySdQtwHCQHKwR",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.4-mini-2026-03-17",
+          "mode": "list",
+          "cachedResultName": "GPT-5.4-MINI-2026-03-17"
+        },
+        "text": "บรรยายรูปนี้เป็นภาษาไทย บอกประเภทรูป (เช่น สลิปโอนเงิน, รูปรถ, เอกสาร, ใบขับขี่, แชท/หน้าจอ) และรายละเอียดสำคัญที่เห็น เช่น ยอดเงิน ธนาคาร ทะเบียนรถ รุ่นรถ สี ความเสียหาย หรือข้อความในรูป\nตอบเป็นย่อหน้าเดียว ไม่ต้องใช้ bullet หรือ markdown",
+        "inputType": "base64",
+        "options": {
+          "maxTokens": 1000
+        }
+      },
+      "id": "16603475-b86c-407a-9f82-9a226f1328d6",
+      "name": "Describe Image (AI)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        2800,
+        784
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "openAiApi": {
+          "id": "7xOP9Nxxwn8Pv89u",
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "tableId": "line_messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "event_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.event_id }}"
+            },
+            {
+              "fieldId": "line_message_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.line_message_id }}"
+            },
+            {
+              "fieldId": "group_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.group_id }}"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.user_id }}"
+            },
+            {
+              "fieldId": "user_display_name",
+              "fieldValue": "={{ $('Get Sender Profile').item.json.displayName ?? '' }}"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "image"
+            },
+            {
+              "fieldId": "image_path",
+              "fieldValue": "=line-media/{{ $('Normalize Message').item.json.group_id }}/{{ $('Normalize Message').item.json.line_message_id }}.jpg"
+            },
+            {
+              "fieldId": "image_description",
+              "fieldValue": "={{ $json['0']?.content?.[0]?.text ?? $json.content?.[0]?.text ?? '' }}"
+            },
+            {
+              "fieldId": "sent_at",
+              "fieldValue": "={{ $('Normalize Message').item.json.sent_at }}"
+            },
+            {
+              "fieldId": "quoted_message_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.quoted_message_id }}"
+            }
+          ]
+        }
+      },
+      "id": "156b98d2-9c1a-4ed9-8551-0d115d8cd1ef",
+      "name": "Save Image Message",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3024,
+        784
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "GVsySdQtwHCQHKwR",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "line_messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "event_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.event_id }}"
+            },
+            {
+              "fieldId": "line_message_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.line_message_id }}"
+            },
+            {
+              "fieldId": "group_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.group_id }}"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.user_id }}"
+            },
+            {
+              "fieldId": "user_display_name",
+              "fieldValue": "={{ $('Get Sender Profile').item.json.displayName ?? '' }}"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "={{ $('Normalize Message').item.json.message_type }}"
+            },
+            {
+              "fieldId": "text",
+              "fieldValue": "={{ $('Normalize Message').item.json.text }}"
+            },
+            {
+              "fieldId": "sticker_package_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.sticker_package_id }}"
+            },
+            {
+              "fieldId": "sticker_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.sticker_id }}"
+            },
+            {
+              "fieldId": "sticker_keywords",
+              "fieldValue": "={{ $('Normalize Message').item.json.sticker_keywords }}"
+            },
+            {
+              "fieldId": "sent_at",
+              "fieldValue": "={{ $('Normalize Message').item.json.sent_at }}"
+            },
+            {
+              "fieldId": "quoted_message_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.quoted_message_id }}"
+            }
+          ]
+        }
+      },
+      "id": "dad11467-4497-417c-9897-54c1cb37b018",
+      "name": "Save Text Or Sticker Message",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        976
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "GVsySdQtwHCQHKwR",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c-type",
+              "leftValue": "={{ $json.type }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "message"
+            },
+            {
+              "id": "c-msgtype",
+              "leftValue": "={{ $json.message?.type }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "text"
+            },
+            {
+              "id": "c-source",
+              "leftValue": "={{ $json.source?.type }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "group"
+            },
+            {
+              "id": "c-register",
+              "leftValue": "={{ ($json.message?.text ?? '').trim() }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "#register"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "55b70247-d50f-4496-8117-6a32b8a400e9",
+      "name": "Filter Register Message",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        976
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a-groupid",
+              "name": "groupId",
+              "value": "={{ $json.source.groupId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-replytoken",
+              "name": "replyToken",
+              "value": "={{ $json.replyToken }}",
+              "type": "string"
+            },
+            {
+              "id": "a-dealercode",
+              "name": "dealerCode",
+              "value": "={{ $json.message.text.trim().replace(/^#register/i, '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a-rawtext",
+              "name": "rawText",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6603f741-465c-49c7-8cc0-392182a699b8",
+      "name": "Extract Register Event",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        976
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.line.me/v2/bot/group/{{ $json.groupId }}/summary",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "28dc9cb8-faad-4acc-9b6c-717fed062393",
+      "name": "Get Group Name",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1680,
+        976
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "wnEM9E2aVqJcfDpe",
+          "name": "Dealer LINE OA Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('config').first().json.dealer_group_mapping_sheet_url }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "dealer_groups",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "group_id": "={{ $json.groupId }}",
+            "group_name": "={{ $json.groupName }}",
+            "registered_at": "={{ $now.setZone('Asia/Bangkok').toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "group_id",
+              "displayName": "group_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "group_name",
+              "displayName": "group_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "registered_at",
+              "displayName": "registered_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "8d6fbd61-f43f-414c-b012-761b939efb62",
+      "name": "Append Mapping",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1904,
+        976
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "2Z58mnLNDfs33OTR",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ replyToken: $('Extract Register Event').item.json.replyToken, messages: [{ type: 'text', text: '✅ ลงทะเบียนกลุ่มเรียบร้อย\\nกลุ่ม: ' + $('Get Group Name').item.json.groupName }] }) }}",
+        "options": {}
+      },
+      "id": "3f0cfbc1-6a75-4575-85e7-82c18363910d",
+      "name": "Reply Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2128,
+        976
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "wnEM9E2aVqJcfDpe",
+          "name": "Dealer LINE OA Auth"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "LINE Webhook": [
+      {
+        "json": {
+          "headers": {
+            "x-forwarded-for": "147.92.150.198, 10.250.60.153",
+            "x-forwarded-proto": "https",
+            "x-forwarded-port": "443",
+            "host": "nonprd-n8n.drivehub.co",
+            "x-amzn-trace-id": "Root=1-6a571c2d-2387adb03a265f7f6686369c",
+            "content-length": "863",
+            "user-agent": "LineBotWebhook/2.0",
+            "content-type": "application/json; charset=utf-8",
+            "x-forwarded-host": "potbellied-leopoldo-duodenary.ngrok-free.dev",
+            "x-line-signature": "yky0Oqq0OeBmIt4dCoKLI8NuEz07OqosRgEleHDB9wU=",
+            "accept-encoding": "gzip"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "destination": "U4ca42a6d063d90582a1d3bd7ca399443",
+            "events": [
+              {
+                "type": "message",
+                "message": {
+                  "type": "image",
+                  "id": "622875008951648445",
+                  "quoteToken": "9UDMa1Al2OfE79YRA5Wrd7xYi4liBJGL2A8I-E68pU2MYNk4a0tI59rXjmrZq5p0jEV6t2ZNmL18YNd5cXOJbZ-0s1Bv2X_iRvbHPB9qkFmUJHg0yf34C0mEBzVsEo6SZHIiFVGyi9uTkPlKWTxmHg",
+                  "markAsReadToken": "J1t3-f4_9bc4xHI1B1ciofwCRgDkPHPgLv8ckwyNP3U7cJTNOwNc9eG4nWhXupI9fO7GkI4leCPOMkHmeeDjr3BekGMnG2mJnxmNjlp636A39UoMh46s1BJNZc_h3RX4Xuo9lU-IWzq4YkxnljzE1n-756wJOGWl1i4y1WIwf5fIYZaBPtFea6erImYmgH2MMVKkmcsIF80h4c6uKwIvpg",
+                  "contentProvider": {
+                    "type": "line"
+                  }
+                },
+                "webhookEventId": "01KXJ4C49F11RY2B7RNPKE94V8",
+                "deliveryContext": {
+                  "isRedelivery": false
+                },
+                "timestamp": 1784093741179,
+                "source": {
+                  "type": "group",
+                  "groupId": "C498087b9a89cc563dcbc6e68a43708a6",
+                  "userId": "U93d574519e5052627fa355ec42374656"
+                },
+                "replyToken": "531f36ba513c4ea2b6ad4b84acf78fda",
+                "mode": "active"
+              }
+            ]
+          },
+          "webhookUrl": "https://nonprd-n8n.drivehub.co/webhook/dealer-line",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "LINE Webhook": {
+      "main": [
+        [
+          {
+            "node": "get env",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get env": {
+      "main": [
+        [
+          {
+            "node": "config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Events": {
+      "main": [
+        [
+          {
+            "node": "Keep Group Messages",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Filter Register Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Group Messages": {
+      "main": [
+        [
+          {
+            "node": "Normalize Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Message": {
+      "main": [
+        [
+          {
+            "node": "Get Sender Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sender Profile": {
+      "main": [
+        [
+          {
+            "node": "Get Group Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Group Summary": {
+      "main": [
+        [
+          {
+            "node": "Upsert Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Group": {
+      "main": [
+        [
+          {
+            "node": "Is Image?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Image?": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Text Or Sticker Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Upload Image To Storage",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Describe Image (AI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Describe Image (AI)": {
+      "main": [
+        [
+          {
+            "node": "Save Image Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Register Message": {
+      "main": [
+        [
+          {
+            "node": "Extract Register Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Register Event": {
+      "main": [
+        [
+          {
+            "node": "Get Group Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Group Name": {
+      "main": [
+        [
+          {
+            "node": "Append Mapping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Mapping": {
+      "main": [
+        [
+          {
+            "node": "Reply Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "8daca0b2-f8f5-42a6-bba8-108d5e512909",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
+  },
+  "nodeGroups": [],
+  "id": "zUakvzhFhwCEfeXV",
+  "tags": []
+}
