@@ -17,14 +17,14 @@
       "type": "n8n-nodes-base.gmailTrigger",
       "typeVersion": 1.3,
       "position": [
-        1552,
-        640
+        4528,
+        2320
       ],
-      "id": "db9e7798-d207-4458-b5e9-d15bf06dfb12",
+      "id": "b472b123-b4ff-4d94-bf08-f86232237ce0",
       "name": "GetNewBookingGmail",
       "credentials": {
         "gmailOAuth2": {
-          "id": "am9InvuBN9KvdHMJ",
+          "id": "wqlOQpAtr6EAUg84",
           "name": "Buddy AI Gmail account"
         }
       }
@@ -54,10 +54,10 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        3472,
-        352
+        6448,
+        2032
       ],
-      "id": "0517670f-450b-4358-929f-6f48ab70f722",
+      "id": "3dd6ae76-5a70-4745-9ccb-17b510e34e9f",
       "name": "get dealer group id",
       "retryOnFail": true,
       "maxTries": 2,
@@ -65,7 +65,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "s8JO7sh6nOOGQufJ",
+          "id": "2Z58mnLNDfs33OTR",
           "name": "Google Sheets account"
         }
       },
@@ -90,16 +90,16 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"query\": \"query booking($id: Int) { booking(id: $id) { id uuid done dealership_uuid branch_uuid dealership { name } branch { name } booking_begin booking_end genre note customer { aggregate_id first_name last_name email phone_number } car { title license_plate } pickup_service_area { name } retrun_service_area { name } duration { days hours total_days } pricing { pickup_price return_price ot_price grace_price discount pricing_rate { date note price } grand_total } tax_invoice { full_name tax_id branch_number address postcode email } } }\",\n  \"variables\": {\n    \"id\": {{ $('extract booking id').item.json.booking_id }}\n  }\n}",
+        "jsonBody": "={\n  \"query\": \"query booking($id: Int) { booking(id: $id) { id uuid done dealership_uuid branch_uuid dealership { name } branch { name } booking_begin booking_end genre category note customer { aggregate_id first_name last_name email phone_number } car { title license_plate } pickup_service_area { name } retrun_service_area { name } duration { days hours total_days } pricing { pickup_price return_price ot_price grace_price discount pricing_rate { date note price } grand_total } tax_invoice { full_name tax_id branch_number address postcode email } } }\",\n  \"variables\": {\n    \"id\": {{ $('extract booking id').item.json.booking_id }}\n  }\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        2688,
-        512
+        5664,
+        2192
       ],
-      "id": "8ace420d-3808-48f9-93eb-15e911d80546",
+      "id": "2d6bad54-5e7a-40a8-b70d-96070cb52792",
       "name": "get booking detail",
       "retryOnFail": true,
       "maxTries": 2,
@@ -123,10 +123,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2176,
-        640
+        5152,
+        2320
       ],
-      "id": "2601cf09-8374-416f-ba94-40fc4af9b42a",
+      "id": "fad327ba-8722-4b24-a3ee-bcf5f2758346",
       "name": "extract booking id"
     },
     {
@@ -146,23 +146,23 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"to\": \"{{ $('get dealer group id').item.json.line_group_chat_id }}\",\n  \"messages\": [\n    {\n      \"type\": \"flex\",\n      \"altText\": \"{{ '🚗 การจองใหม่ #' + $('get booking detail').item.json.data.booking.id }}\",\n      \"contents\": {\n        \"type\": \"bubble\",\n        \"header\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"backgroundColor\": \"#1B6AE3\",\n          \"paddingAll\": \"16px\",\n          \"contents\": [\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"🚗 การจองใหม่!\", \"weight\": \"bold\", \"color\": \"#FFFFFF\", \"size\": \"md\", \"flex\": 3 },\n                { \"type\": \"text\", \"text\": \"{{ '#' + $('get booking detail').item.json.data.booking.id }}\", \"weight\": \"bold\", \"color\": \"#FFFFFF\", \"size\": \"md\", \"align\": \"end\", \"flex\": 2 }\n              ]\n            },\n            {\n              \"type\": \"text\",\n              \"text\": \"{{ ({'daily':'เช่ารถขับเอง','transfer':'มีคนขับ'})[$('get booking detail').item.json.data.booking.genre] || $('get booking detail').item.json.data.booking.genre }}\",\n              \"color\": \"#C5D8FF\",\n              \"size\": \"sm\",\n              \"margin\": \"xs\"\n            }\n          ]\n        },\n        \"body\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"spacing\": \"md\",\n          \"paddingAll\": \"16px\",\n          \"contents\": [\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"spacing\": \"sm\",\n              \"contents\": [\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"📅 รับรถ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                    { \"type\": \"text\", \"text\": \"{{ new Date($('get booking detail').item.json.data.booking.booking_begin*1000).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',calendar:'gregory',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')+'น.' }}\", \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"weight\": \"bold\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"🏁 คืนรถ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                    { \"type\": \"text\", \"text\": \"{{ new Date($('get booking detail').item.json.data.booking.booking_end*1000).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',calendar:'gregory',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')+'น.' }}\", \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"weight\": \"bold\" }\n                  ]\n                },\n                { \"type\": \"text\", \"text\": \"{{ (()=>{ const d=$('get booking detail').item.json.data.booking.duration; const p=[]; if(d.days>0)p.push(d.days+' วัน'); if(d.hours>0)p.push(d.hours+' ชั่วโมง'); return 'รวม '+p.join(' '); })() }}\", \"color\": \"#888888\", \"size\": \"xs\" }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"📍 สถานที่\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.pickup_service_area.name) }}, \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"weight\": \"bold\" }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"🚘 รถ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.car.title + ($('get booking detail').item.json.data.booking.car.license_plate ? '\\nทะเบียน: '+$('get booking detail').item.json.data.booking.car.license_plate : '')) }}, \"size\": \"sm\", \"flex\": 5, \"wrap\": true }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"spacing\": \"xs\",\n              \"contents\": [\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"👤\", \"size\": \"sm\", \"flex\": 1 },\n                    { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.customer.first_name+' '+$('get booking detail').item.json.data.booking.customer.last_name) }}, \"size\": \"sm\", \"flex\": 6, \"wrap\": true, \"weight\": \"bold\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"📞\", \"size\": \"sm\", \"flex\": 1 },\n                    { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.customer.phone_number) }}, \"size\": \"sm\", \"flex\": 6 }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"✉️\", \"size\": \"sm\", \"flex\": 1 },\n                    { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.customer.email) }}, \"size\": \"sm\", \"flex\": 6, \"wrap\": true }\n                  ]\n                }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"หมายเหตุ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2, \"wrap\": true },\n                { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.note || '-') }}, \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"color\": \"#1B6AE3\", \"maxLines\": 3 }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"spacing\": \"xs\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"💳 ราคาหน้าเว็บไซต์\", \"weight\": \"bold\", \"size\": \"sm\", \"color\": \"#333333\" },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"margin\": \"xs\",\n                  \"contents\": [\n                    {\n                      \"type\": \"text\",\n                      \"text\": {{ JSON.stringify((()=>{ const p=$('get booking detail').item.json.data.booking.pricing; return p.pricing_rate.map(r=>{ const d=new Date(r.date*1000).toLocaleDateString('th-TH',{timeZone:'Asia/Bangkok',calendar:'gregory',day:'2-digit',month:'2-digit',year:'numeric'}); const note=r.note.trim(); const t=note.length>10?note.substring(0,15)+'...':note; return d+' ('+t+')'; }).join('\\n'); })()) }},\n                      \"size\": \"xs\", \"color\": \"#555555\", \"wrap\": true, \"flex\": 6\n                    },\n                    {\n                      \"type\": \"text\",\n                      \"text\": {{ JSON.stringify((()=>{ const p=$('get booking detail').item.json.data.booking.pricing; return p.pricing_rate.map(r=>'฿'+(r.price/100).toLocaleString('en-US')).join('\\n'); })()) }},\n                      \"size\": \"xs\", \"color\": \"#555555\", \"wrap\": true, \"flex\": 2, \"align\": \"end\"\n                    }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าล่วงเวลา\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.grace_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าบริการนอกเวลาทำการ\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.ot_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าบริการส่งรถ\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.pickup_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าบริการรับรถ\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.return_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ส่วนลด\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ $('get booking detail').item.json.data.booking.pricing.discount > 0 ? '-฿'+($('get booking detail').item.json.data.booking.pricing.discount/100).toLocaleString('en-US') : '-' }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\", \"color\": \"#CC3300\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"backgroundColor\": \"#EEF4FF\",\n                  \"paddingAll\": \"8px\",\n                  \"cornerRadius\": \"6px\",\n                  \"margin\": \"sm\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"💰 รวมทั้งสิ้น\", \"weight\": \"bold\", \"size\": \"sm\", \"flex\": 3 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.grand_total/100).toLocaleString('en-US') }}\", \"weight\": \"bold\", \"size\": \"sm\", \"color\": \"#1B6AE3\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                }\n              ]\n            }\n          ]\n        },\n        \"footer\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"paddingAll\": \"12px\",\n          \"spacing\": \"sm\",\n          \"contents\": [\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"backgroundColor\": \"#1B6AE3\",\n              \"cornerRadius\": \"8px\",\n              \"paddingAll\": \"11px\",\n              \"action\": {\n                \"type\": \"uri\",\n                \"label\": \"ติดต่อลูกค้า\",\n                \"uri\": \"{{ 'tel:' + $('get booking detail').item.json.data.booking.customer.phone_number.replace(/[^0-9+]/g,'') }}\"\n              },\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"ติดต่อลูกค้า\", \"color\": \"#FFFFFF\", \"size\": \"md\", \"align\": \"center\" }\n              ]\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"backgroundColor\": \"#FFFFFF\",\n              \"borderColor\": \"#1B6AE3\",\n              \"borderWidth\": \"1px\",\n              \"cornerRadius\": \"8px\",\n              \"paddingAll\": \"10px\",\n              \"action\": {\n                \"type\": \"uri\",\n                \"label\": \"ดูรายละเอียดการจอง\",\n                \"uri\": \"{{ $('config').first().json.manage_url + '/staff/bookings/' + $('get booking detail').item.json.data.booking.id }}\"\n              },\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"ดูรายละเอียดการจอง\", \"color\": \"#1B6AE3\", \"size\": \"md\", \"align\": \"center\" }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"to\": \"{{ $('get dealer group id').item.json.line_group_chat_id }}\",\n  \"messages\": [\n    {\n      \"type\": \"flex\",\n      \"altText\": \"{{ '🚗 การจองใหม่ #' + $('get booking detail').item.json.data.booking.id }}\",\n      \"contents\": {\n        \"type\": \"bubble\",\n        \"header\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"backgroundColor\": \"#1B6AE3\",\n          \"paddingAll\": \"16px\",\n          \"contents\": [\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"🚗 การจองใหม่!\", \"weight\": \"bold\", \"color\": \"#FFFFFF\", \"size\": \"md\", \"flex\": 3 },\n                { \"type\": \"text\", \"text\": \"{{ '#' + $('get booking detail').item.json.data.booking.id }}\", \"weight\": \"bold\", \"color\": \"#FFFFFF\", \"size\": \"md\", \"align\": \"end\", \"flex\": 2 }\n              ]\n            },\n            {\n              \"type\": \"text\",\n              \"text\": \"{{ ({'sd':'เช่ารถขับเอง','cwd':'เช่ารถพร้อมคนขับ'})[$('get booking detail').item.json.data.booking.category] || 'เช่ารถขับเอง' }}\",\n              \"color\": \"#C5D8FF\",\n              \"size\": \"sm\",\n              \"margin\": \"xs\"\n            }\n          ]\n        },\n        \"body\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"spacing\": \"md\",\n          \"paddingAll\": \"16px\",\n          \"contents\": [\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"spacing\": \"sm\",\n              \"contents\": [\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"📅 รับรถ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                    { \"type\": \"text\", \"text\": \"{{ new Date($('get booking detail').item.json.data.booking.booking_begin*1000).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',calendar:'gregory',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')+'น.' }}\", \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"weight\": \"bold\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"🏁 คืนรถ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                    { \"type\": \"text\", \"text\": \"{{ new Date($('get booking detail').item.json.data.booking.booking_end*1000).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',calendar:'gregory',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','')+'น.' }}\", \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"weight\": \"bold\" }\n                  ]\n                },\n                { \"type\": \"text\", \"text\": \"{{ (()=>{ const d=$('get booking detail').item.json.data.booking.duration; const p=[]; if(d.days>0)p.push(d.days+' วัน'); if(d.hours>0)p.push(d.hours+' ชั่วโมง'); return 'รวม '+p.join(' '); })() }}\", \"color\": \"#888888\", \"size\": \"xs\" }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"📍 สถานที่\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.pickup_service_area.name) }}, \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"weight\": \"bold\" }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"🚘 รถ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2 },\n                { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.car.title + ($('get booking detail').item.json.data.booking.car.license_plate ? '\\nทะเบียน: '+$('get booking detail').item.json.data.booking.car.license_plate : '')) }}, \"size\": \"sm\", \"flex\": 5, \"wrap\": true }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"spacing\": \"xs\",\n              \"contents\": [\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"👤\", \"size\": \"sm\", \"flex\": 1 },\n                    { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.customer.first_name+' '+$('get booking detail').item.json.data.booking.customer.last_name) }}, \"size\": \"sm\", \"flex\": 6, \"wrap\": true, \"weight\": \"bold\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"📞\", \"size\": \"sm\", \"flex\": 1 },\n                    { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.customer.phone_number) }}, \"size\": \"sm\", \"flex\": 6 }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"✉️\", \"size\": \"sm\", \"flex\": 1 },\n                    { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.customer.email) }}, \"size\": \"sm\", \"flex\": 6, \"wrap\": true }\n                  ]\n                }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"horizontal\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"หมายเหตุ\", \"color\": \"#888888\", \"size\": \"sm\", \"flex\": 2, \"wrap\": true },\n                { \"type\": \"text\", \"text\": {{ JSON.stringify($('get booking detail').item.json.data.booking.note || '-') }}, \"size\": \"sm\", \"flex\": 5, \"wrap\": true, \"color\": \"#1B6AE3\", \"maxLines\": 3 }\n              ]\n            },\n            { \"type\": \"separator\" },\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"spacing\": \"xs\",\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"💳 ราคาหน้าเว็บไซต์\", \"weight\": \"bold\", \"size\": \"sm\", \"color\": \"#333333\" },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"margin\": \"xs\",\n                  \"contents\": [\n                    {\n                      \"type\": \"text\",\n                      \"text\": {{ JSON.stringify((()=>{ const p=$('get booking detail').item.json.data.booking.pricing; return p.pricing_rate.map(r=>{ const d=new Date(r.date*1000).toLocaleDateString('th-TH',{timeZone:'Asia/Bangkok',calendar:'gregory',day:'2-digit',month:'2-digit',year:'numeric'}); const note=r.note.trim(); const t=note.length>10?note.substring(0,15)+'...':note; return d+' ('+t+')'; }).join('\\n'); })()) }},\n                      \"size\": \"xs\", \"color\": \"#555555\", \"wrap\": true, \"flex\": 6\n                    },\n                    {\n                      \"type\": \"text\",\n                      \"text\": {{ JSON.stringify((()=>{ const p=$('get booking detail').item.json.data.booking.pricing; return p.pricing_rate.map(r=>'฿'+(r.price/100).toLocaleString('en-US')).join('\\n'); })()) }},\n                      \"size\": \"xs\", \"color\": \"#555555\", \"wrap\": true, \"flex\": 2, \"align\": \"end\"\n                    }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าล่วงเวลา\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.grace_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าบริการนอกเวลาทำการ\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.ot_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าบริการส่งรถ\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.pickup_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ค่าบริการรับรถ\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.return_price/100).toLocaleString('en-US') }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"ส่วนลด\", \"color\": \"#888888\", \"size\": \"xs\", \"flex\": 4 },\n                    { \"type\": \"text\", \"text\": \"{{ $('get booking detail').item.json.data.booking.pricing.discount > 0 ? '-฿'+($('get booking detail').item.json.data.booking.pricing.discount/100).toLocaleString('en-US') : '-' }}\", \"size\": \"xs\", \"flex\": 3, \"align\": \"end\", \"color\": \"#CC3300\" }\n                  ]\n                },\n                {\n                  \"type\": \"box\",\n                  \"layout\": \"horizontal\",\n                  \"backgroundColor\": \"#EEF4FF\",\n                  \"paddingAll\": \"8px\",\n                  \"cornerRadius\": \"6px\",\n                  \"margin\": \"sm\",\n                  \"contents\": [\n                    { \"type\": \"text\", \"text\": \"💰 รวมทั้งสิ้น\", \"weight\": \"bold\", \"size\": \"sm\", \"flex\": 3 },\n                    { \"type\": \"text\", \"text\": \"{{ '฿'+($('get booking detail').item.json.data.booking.pricing.grand_total/100).toLocaleString('en-US') }}\", \"weight\": \"bold\", \"size\": \"sm\", \"color\": \"#1B6AE3\", \"flex\": 3, \"align\": \"end\" }\n                  ]\n                }\n              ]\n            }\n          ]\n        },\n        \"footer\": {\n          \"type\": \"box\",\n          \"layout\": \"vertical\",\n          \"paddingAll\": \"12px\",\n          \"spacing\": \"sm\",\n          \"contents\": [\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"backgroundColor\": \"#1B6AE3\",\n              \"cornerRadius\": \"8px\",\n              \"paddingAll\": \"11px\",\n              \"action\": {\n                \"type\": \"uri\",\n                \"label\": \"ติดต่อลูกค้า\",\n                \"uri\": \"{{ 'tel:' + $('get booking detail').item.json.data.booking.customer.phone_number.replace(/[^0-9+]/g,'') }}\"\n              },\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"ติดต่อลูกค้า\", \"color\": \"#FFFFFF\", \"size\": \"md\", \"align\": \"center\" }\n              ]\n            },\n            {\n              \"type\": \"box\",\n              \"layout\": \"vertical\",\n              \"backgroundColor\": \"#FFFFFF\",\n              \"borderColor\": \"#1B6AE3\",\n              \"borderWidth\": \"1px\",\n              \"cornerRadius\": \"8px\",\n              \"paddingAll\": \"10px\",\n              \"action\": {\n                \"type\": \"uri\",\n                \"label\": \"ดูรายละเอียดการจอง\",\n                \"uri\": \"{{ $('config').first().json.manage_url + '/staff/bookings/' + $('get booking detail').item.json.data.booking.id }}\"\n              },\n              \"contents\": [\n                { \"type\": \"text\", \"text\": \"ดูรายละเอียดการจอง\", \"color\": \"#1B6AE3\", \"size\": \"md\", \"align\": \"center\" }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  ]\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        4240,
-        144
+        7216,
+        1824
       ],
-      "id": "d44312e3-5eaf-4ee5-afbb-ed12f08d68b0",
+      "id": "b0f93f7f-d997-4ea2-8415-b92b16587c06",
       "name": "push to dealer line",
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 5000,
       "credentials": {
         "httpBearerAuth": {
-          "id": "XMnV9lPJ7S0YerCT",
+          "id": "wnEM9E2aVqJcfDpe",
           "name": "Dealer LINE OA Auth"
         }
       },
@@ -193,10 +193,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        4688,
-        128
+        7664,
+        1808
       ],
-      "id": "b3acb317-604c-44a3-82f5-1988b9cac8ea",
+      "id": "498c3e0f-53c8-4c3d-a9c7-081447130d36",
       "name": "post booking done",
       "retryOnFail": true,
       "maxTries": 2,
@@ -256,10 +256,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2000,
-        496
+        4976,
+        2176
       ],
-      "id": "41807476-237f-4d4f-a7ed-b5eeaca93814",
+      "id": "c4df3ac2-e65c-41b8-8e51-4c89c781a6aa",
       "name": "config",
       "executeOnce": true
     },
@@ -272,11 +272,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        4688,
-        32
+        7664,
+        1712
       ],
       "typeVersion": 1,
-      "id": "18b880e8-8d15-4cb6-a415-b001bf837152",
+      "id": "125a22ed-cbe3-49b5-bdb7-1aeb566dfb45",
       "name": "Sticky Note"
     },
     {
@@ -300,10 +300,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2448,
-        512
+        5424,
+        2192
       ],
-      "id": "e2cfd90c-8cfa-45a9-bcd7-cdb341e192cd",
+      "id": "6fb7e1c0-0279-4b0c-ac81-cc52177be172",
       "name": "get cached token (booking)"
     },
     {
@@ -334,10 +334,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        3232,
-        368
+        6208,
+        2048
       ],
-      "id": "9099d8c3-bbb2-433f-85c6-ae90efc13fa8",
+      "id": "e833db36-406b-4449-8f96-10f8a3e21012",
       "name": "booking detail ok?"
     },
     {
@@ -376,10 +376,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2976,
-        528
+        5952,
+        2208
       ],
-      "id": "12fc0ed3-ea99-4977-a03f-2c7593c8efdb",
+      "id": "ff82aeda-07ab-4224-8f4d-e493260c76a4",
       "name": "booking 401?"
     },
     {
@@ -416,10 +416,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        3232,
-        624
+        6208,
+        2304
       ],
-      "id": "ab5c57ab-7467-424d-a8b1-bb5ce4b04735",
+      "id": "f8d5b155-a8d9-4117-b2f7-34abc21a3b15",
       "name": "refresh token (booking)",
       "retryOnFail": true,
       "waitBetweenTries": 5000,
@@ -449,10 +449,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4688,
-        624
+        7664,
+        2304
       ],
-      "id": "3af55b2c-8878-4565-8309-50089f3c8b75",
+      "id": "a1a27d91-2bea-4131-ad0e-8309cfe5adfe",
       "name": "set error (booking)"
     },
     {
@@ -476,10 +476,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        4464,
-        128
+        7440,
+        1808
       ],
-      "id": "07355cc9-0edd-4b46-a354-99ea0b3f896a",
+      "id": "3fe5d12a-ad3a-4623-9f1c-7645ac146c4b",
       "name": "get cached token (done)"
     },
     {
@@ -518,10 +518,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        4912,
-        144
+        7888,
+        1824
       ],
-      "id": "51f123ae-4297-4bef-ac41-2bb855a9ab74",
+      "id": "9809b65a-9203-4c1a-8498-4a0cb306232f",
       "name": "booking done 401?"
     },
     {
@@ -558,10 +558,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        5152,
-        128
+        8128,
+        1808
       ],
-      "id": "8cd742a8-f50d-48e9-b803-76c843161a11",
+      "id": "75a25b29-8f32-4780-9838-dc2cb5629281",
       "name": "refresh token (done)",
       "retryOnFail": true,
       "waitBetweenTries": 5000,
@@ -596,10 +596,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        3968,
-        336
+        6944,
+        2016
       ],
-      "id": "5a14815d-5e31-4b5f-b297-1d5200997b61",
+      "id": "9b9075b3-8018-4fc8-9192-aba9423b1a79",
       "name": "group id found?"
     },
     {
@@ -625,10 +625,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4688,
-        336
+        7664,
+        2016
       ],
-      "id": "3759b5d9-8014-4188-aa6f-074a7002cbe2",
+      "id": "082a737e-e070-40db-916d-93d248997239",
       "name": "set error (group id)"
     },
     {
@@ -645,18 +645,18 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        5456,
-        528
+        8432,
+        2208
       ],
-      "id": "27949ab2-e192-4017-9f0d-bc3c7552995d",
+      "id": "59c7c79e-aa0c-4484-a41f-986bc592799f",
       "name": "slack error alert",
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 5000,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "z4ZygH5NmXS2HJjn",
-          "name": "Slack Header Auth account"
+          "id": "77Yr93Km4SFaBpex",
+          "name": "Uptime Kuma Auth Account"
         }
       },
       "onError": "continueErrorOutput"
@@ -727,10 +727,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        5680,
-        544
+        8656,
+        2224
       ],
-      "id": "82b34ce9-6105-4fea-a44e-b9140428e1e9",
+      "id": "bf21ee5a-ed77-4cb6-9cf1-895e1a6b9616",
       "name": "log error to table"
     },
     {
@@ -761,10 +761,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        4912,
-        -16
+        7888,
+        1664
       ],
-      "id": "4c11cc86-0e8b-4e49-9ef4-e2146e571646",
+      "id": "300c7d76-c577-4020-ab7b-3effb7ef1926",
       "name": "booking done ok?"
     },
     {
@@ -795,10 +795,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        3712,
-        352
+        6688,
+        2032
       ],
-      "id": "47613fef-1e65-4264-826d-fc76c5b19ddf",
+      "id": "1591df49-2b16-48b1-b29e-a9eae56922c7",
       "name": "sheet ok?"
     },
     {
@@ -824,10 +824,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4688,
-        480
+        7664,
+        2160
       ],
-      "id": "723d6407-9030-41ab-a229-df85d4588d94",
+      "id": "8bf70ddc-bfc4-43f6-bfaf-747c22d240ad",
       "name": "set error (sheet)"
     },
     {
@@ -838,11 +838,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1120,
-        -368
+        4096,
+        1312
       ],
       "typeVersion": 1,
-      "id": "83155443-01e6-462b-b81f-ae573837916c",
+      "id": "90c0d661-1d7d-427a-905a-392175f9942e",
       "name": "Sticky Note1"
     },
     {
@@ -887,10 +887,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1920,
-        224
+        4896,
+        1904
       ],
-      "id": "5e367f49-d314-4f32-9753-8dfb46599639",
+      "id": "9de56038-6ffa-4116-b169-735f009f55d1",
       "name": "backlog flags"
     },
     {
@@ -921,10 +921,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2128,
-        224
+        5104,
+        1904
       ],
-      "id": "36cee3c1-5e11-4885-adc1-c532b6a863f3",
+      "id": "d2c0f681-6e43-4600-9c9e-8485339b783f",
       "name": "backlog mode?"
     },
     {
@@ -950,10 +950,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        2368,
-        208
+        5344,
+        1888
       ],
-      "id": "4c9682e9-6e7b-4b4e-9c87-f1bb5f011e58",
+      "id": "15db649a-151f-461d-a6c7-bce7000f5b05",
       "name": "slack backlog alert",
       "retryOnFail": true,
       "maxTries": 3,
@@ -961,8 +961,8 @@
       "executeOnce": true,
       "credentials": {
         "httpHeaderAuth": {
-          "id": "z4ZygH5NmXS2HJjn",
-          "name": "Slack Header Auth account"
+          "id": "77Yr93Km4SFaBpex",
+          "name": "Uptime Kuma Auth Account"
         }
       },
       "onError": "continueRegularOutput"
@@ -995,10 +995,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2976,
-        352
+        5952,
+        2032
       ],
-      "id": "bb2b2ad6-36c6-4935-b29c-cdd2255265a6",
+      "id": "70da8775-67d7-4f26-ac0d-6e5ab0c3d408",
       "name": "booking done?"
     },
     {
@@ -1013,48 +1013,15 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1792,
-        496
+        4768,
+        2176
       ],
-      "id": "bf600705-c5c8-4e21-8354-bb344107b278",
+      "id": "959b3eef-4b4d-4436-83d5-d016381a51bb",
       "name": "get env",
       "executeOnce": true
     }
   ],
-  "pinData": {
-    "GetNewBookingGmail": [
-      {
-        "json": {
-          "id": "19f5f54cd3516a5b",
-          "threadId": "19f5f54cd3516a5b",
-          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3684714 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ ฐิติมาหวิงหยี่ ซิว +66828819813 thitimasrisaeng@gmail.com ข้อมูลบริษัทรถเช่า C00327 Flukie Car Rental",
-          "payload": {
-            "mimeType": "text/html"
-          },
-          "sizeEstimate": 127800,
-          "historyId": "44868",
-          "internalDate": "1784010819000",
-          "labels": [
-            {
-              "id": "INBOX",
-              "name": "INBOX"
-            },
-            {
-              "id": "CATEGORY_UPDATES",
-              "name": "CATEGORY_UPDATES"
-            },
-            {
-              "id": "UNREAD",
-              "name": "UNREAD"
-            }
-          ],
-          "From": "Drivehub <no-reply@transaction.drivehub.co>",
-          "Subject": "[Drivehub] #3684714- ท่านได้รับการจองใหม่จาก DRIVEHUB",
-          "To": "Natnararat.1977@gmail.com"
-        }
-      }
-    ]
-  },
+  "pinData": {},
   "connections": {
     "GetNewBookingGmail": {
       "main": [
@@ -1226,7 +1193,13 @@
     },
     "get cached token (done)": {
       "main": [
-        []
+        [
+          {
+            "node": "post booking done",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "booking done 401?": {
@@ -1397,14 +1370,16 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": true
   },
-  "versionId": "9dbf8c89-4eb1-417c-8a94-4d3a776495b6",
+  "versionId": "d23f9239-7e25-4619-80b4-6472d0702984",
   "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
     "templateCredsSetupCompleted": true,
-    "instanceId": "d67d3eefb5bd288203ef7c609af3e9c261c718d0eaa49b38b25881cbd380cfa4"
+    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
   },
   "nodeGroups": [],
-  "id": "kJ8WLrGUYt8Lwf8S",
+  "id": "VYOi3gDUer5L9yvH",
   "tags": []
 }
