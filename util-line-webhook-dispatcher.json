@@ -1,0 +1,183 @@
+{
+  "name": "[Util] LINE Webhook — Dispatcher",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dev/dealer-line",
+        "options": {}
+      },
+      "id": "d3f93b62-783d-4a77-a789-e64a358423ad",
+      "name": "LINE Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        784,
+        784
+      ],
+      "webhookId": "6dbafb40-c4bc-4884-9fca-f0e6a1cb4b35"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "environment_variables",
+          "mode": "name"
+        }
+      },
+      "id": "5aff1a46-f704-49db-bf28-a5212ce32a4c",
+      "name": "get env",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        592
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-recorder-id",
+              "name": "recorder_flow_id",
+              "type": "string",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'RECORDER_FLOW_ID').json.value }}"
+            },
+            {
+              "id": "cfg-register-id",
+              "name": "register_flow_id",
+              "type": "string",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'REGISTER_FLOW_ID').json.value }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9c3a5812-87a8-4a87-9b1e-839c82ecc351",
+      "name": "config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1232,
+        592
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.events",
+        "options": {}
+      },
+      "id": "97084219-108c-4aab-bfa5-5b3dfcbf5ad4",
+      "name": "Split Out Events",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('config').first().json.recorder_flow_id }}"
+        },
+        "options": {}
+      },
+      "id": "5b28427f-90f6-4839-a880-9fcc9f4de438",
+      "name": "Call Recorder",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1456,
+        784
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('config').first().json.register_flow_id }}"
+        },
+        "options": {}
+      },
+      "id": "f5a4a2c2-7c38-442b-80fe-6c0cb0b3443e",
+      "name": "Call Register",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1456,
+        976
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "LINE Webhook": {
+      "main": [
+        [
+          {
+            "node": "get env",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get env": {
+      "main": [
+        [
+          {
+            "node": "config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Events": {
+      "main": [
+        [
+          {
+            "node": "Call Recorder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Call Register",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "1d7c0b3d-dea9-4842-a8a9-d1c9dbf45654",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
+  },
+  "nodeGroups": [],
+  "id": "zUakvzhFhwCEfeXV",
+  "tags": []
+}

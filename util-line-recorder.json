@@ -1,0 +1,720 @@
+{
+  "name": "[Util] LINE — Recorder",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "ff1c1de9-eed0-412a-8009-a43d1e4bf9a2",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "environment_variables",
+          "mode": "name"
+        }
+      },
+      "id": "f11dd226-03e5-47d5-9fec-4183455f3bb7",
+      "name": "get env",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        0
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-supabase-url",
+              "name": "supabase_url",
+              "type": "string",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'SUPABASE_URL').json.value }}"
+            },
+            {
+              "id": "cfg-msg-table",
+              "name": "line_messages_table",
+              "type": "string",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'LINE_MESSAGES_TABLE').json.value }}"
+            },
+            {
+              "id": "cfg-grp-table",
+              "name": "line_groups_table",
+              "type": "string",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'LINE_GROUPS_TABLE').json.value }}"
+            },
+            {
+              "id": "cfg-bucket",
+              "name": "line_media_bucket",
+              "type": "string",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'LINE_MEDIA_BUCKET').json.value }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa739e5d-2989-4b9b-806f-269c572d3d2a",
+      "name": "config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "f-type",
+              "leftValue": "={{ $json.type }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "message"
+            },
+            {
+              "id": "f-source",
+              "leftValue": "={{ $json.source?.type }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "group"
+            },
+            {
+              "id": "f-msgtype",
+              "leftValue": "={{ [\"text\",\"image\",\"sticker\"].includes($json.message?.type ?? \"\") }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a51be21b-fcd2-4342-8ba5-429633570c53",
+      "name": "Keep Group Messages",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "n-event-id",
+              "name": "event_id",
+              "value": "={{ $json.webhookEventId ?? $json.message?.id }}",
+              "type": "string"
+            },
+            {
+              "id": "n-msg-id",
+              "name": "line_message_id",
+              "value": "={{ $json.message?.id }}",
+              "type": "string"
+            },
+            {
+              "id": "n-group-id",
+              "name": "group_id",
+              "value": "={{ $json.source?.groupId }}",
+              "type": "string"
+            },
+            {
+              "id": "n-user-id",
+              "name": "user_id",
+              "value": "={{ $json.source?.userId ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "n-msg-type",
+              "name": "message_type",
+              "value": "={{ $json.message?.type }}",
+              "type": "string"
+            },
+            {
+              "id": "n-text",
+              "name": "text",
+              "value": "={{ $json.message?.text ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "n-stk-pkg",
+              "name": "sticker_package_id",
+              "value": "={{ $json.message?.packageId ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "n-stk-id",
+              "name": "sticker_id",
+              "value": "={{ $json.message?.stickerId ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "n-stk-kw",
+              "name": "sticker_keywords",
+              "value": "={{ ($json.message?.keywords ?? []).join(\", \") }}",
+              "type": "string"
+            },
+            {
+              "id": "n-sent-at",
+              "name": "sent_at",
+              "value": "={{ new Date($json.timestamp).toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "n-quoted",
+              "name": "quoted_message_id",
+              "value": "={{ $json.message?.quotedMessageId ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5513ebe8-2867-4774-965c-2b99bbb81ad3",
+      "name": "Normalize Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.line.me/v2/bot/group/{{ $json.group_id }}/member/{{ $json.user_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "9a752de0-8f86-4863-a10c-643c9197fdb7",
+      "name": "Get Sender Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        192
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "wnEM9E2aVqJcfDpe",
+          "name": "Dealer LINE OA Auth"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.line.me/v2/bot/group/{{ $('Normalize Message').item.json.group_id }}/summary",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "88201a47-1c5c-4611-8a51-e12468bfaf6c",
+      "name": "Get Group Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        192
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "wnEM9E2aVqJcfDpe",
+          "name": "Dealer LINE OA Auth"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('config').first().json.supabase_url }}/rest/v1/{{ $('config').first().json.line_groups_table }}?on_conflict=group_id",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ group_id: $('Normalize Message').item.json.group_id, group_name: $('Get Group Summary').item.json.groupName ?? null }) }}",
+        "options": {}
+      },
+      "id": "49c65f56-247e-4ad1-927b-62ca37ebd43c",
+      "name": "Upsert Group",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        192
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "supabaseApi": {
+          "id": "GVsySdQtwHCQHKwR",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "i-img",
+              "leftValue": "={{ $('Normalize Message').item.json.message_type }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "image"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0f48cc77-2b5d-4235-9755-01511b2f48f2",
+      "name": "Is Image?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api-data.line.me/v2/bot/message/{{ $('Normalize Message').item.json.line_message_id }}/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "a54bbe0e-b137-4be2-afee-f007d2181b38",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1568,
+        96
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "wnEM9E2aVqJcfDpe",
+          "name": "Dealer LINE OA Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "={{ $('config').first().json.line_messages_table }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "event_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.event_id }}"
+            },
+            {
+              "fieldId": "line_message_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.line_message_id }}"
+            },
+            {
+              "fieldId": "group_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.group_id }}"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.user_id }}"
+            },
+            {
+              "fieldId": "user_display_name",
+              "fieldValue": "={{ $('Get Sender Profile').item.json.displayName ?? '' }}"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "={{ $('Normalize Message').item.json.message_type }}"
+            },
+            {
+              "fieldId": "text",
+              "fieldValue": "={{ $('Normalize Message').item.json.text }}"
+            },
+            {
+              "fieldId": "sticker_package_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.sticker_package_id }}"
+            },
+            {
+              "fieldId": "sticker_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.sticker_id }}"
+            },
+            {
+              "fieldId": "sticker_keywords",
+              "fieldValue": "={{ $('Normalize Message').item.json.sticker_keywords }}"
+            },
+            {
+              "fieldId": "sent_at",
+              "fieldValue": "={{ $('Normalize Message').item.json.sent_at }}"
+            },
+            {
+              "fieldId": "quoted_message_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.quoted_message_id }}"
+            }
+          ]
+        }
+      },
+      "id": "f2cd753f-5d76-4fdf-985c-c47412893f83",
+      "name": "Save Text Or Sticker Message",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        288
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "GVsySdQtwHCQHKwR",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('config').first().json.supabase_url }}/storage/v1/object/{{ $('config').first().json.line_media_bucket }}/{{ $('Normalize Message').item.json.group_id }}/{{ $('Normalize Message').item.json.line_message_id }}.jpg",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-upsert",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "eeb40d37-0b88-483d-920e-17a598b06350",
+      "name": "Upload Image To Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1792,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "supabaseApi": {
+          "id": "GVsySdQtwHCQHKwR",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.4-mini-2026-03-17",
+          "mode": "list",
+          "cachedResultName": "GPT-5.4-MINI-2026-03-17"
+        },
+        "text": "บรรยายรูปนี้เป็นภาษาไทย บอกประเภทรูป (เช่น สลิปโอนเงิน, รูปรถ, เอกสาร, ใบขับขี่, แชท/หน้าจอ) และรายละเอียดสำคัญที่เห็น เช่น ยอดเงิน ธนาคาร ทะเบียนรถ รุ่นรถ สี ความเสียหาย หรือข้อความในรูป\nตอบเป็นย่อหน้าเดียว ไม่ต้องใช้ bullet หรือ markdown",
+        "inputType": "base64",
+        "options": {
+          "maxTokens": 1000
+        }
+      },
+      "id": "552a38c9-66ad-4986-9570-be016db0f918",
+      "name": "Describe Image (AI)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1792,
+        192
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "openAiApi": {
+          "id": "7xOP9Nxxwn8Pv89u",
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "tableId": "={{ $('config').first().json.line_messages_table }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "event_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.event_id }}"
+            },
+            {
+              "fieldId": "line_message_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.line_message_id }}"
+            },
+            {
+              "fieldId": "group_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.group_id }}"
+            },
+            {
+              "fieldId": "user_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.user_id }}"
+            },
+            {
+              "fieldId": "user_display_name",
+              "fieldValue": "={{ $('Get Sender Profile').item.json.displayName ?? '' }}"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "image"
+            },
+            {
+              "fieldId": "image_path",
+              "fieldValue": "={{ $('config').first().json.line_media_bucket }}/{{ $('Normalize Message').item.json.group_id }}/{{ $('Normalize Message').item.json.line_message_id }}.jpg"
+            },
+            {
+              "fieldId": "image_description",
+              "fieldValue": "={{ $json.error ? '' : (typeof $json.content === 'string' ? $json.content : (Array.isArray($json.content) ? $json.content.map(c => c?.text ?? '').join(' ') : ($json['0']?.content?.[0]?.text ?? $json.output_text ?? $json.text ?? ''))) }}"
+            },
+            {
+              "fieldId": "sent_at",
+              "fieldValue": "={{ $('Normalize Message').item.json.sent_at }}"
+            },
+            {
+              "fieldId": "quoted_message_id",
+              "fieldValue": "={{ $('Normalize Message').item.json.quoted_message_id }}"
+            }
+          ]
+        }
+      },
+      "id": "ea422939-b40d-4e69-9cb6-eacec30eb941",
+      "name": "Save Image Message",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        192
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "GVsySdQtwHCQHKwR",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "get env",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Keep Group Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get env": {
+      "main": [
+        [
+          {
+            "node": "config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Group Messages": {
+      "main": [
+        [
+          {
+            "node": "Normalize Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Message": {
+      "main": [
+        [
+          {
+            "node": "Get Sender Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sender Profile": {
+      "main": [
+        [
+          {
+            "node": "Get Group Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Group Summary": {
+      "main": [
+        [
+          {
+            "node": "Upsert Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Group": {
+      "main": [
+        [
+          {
+            "node": "Is Image?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Image?": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Text Or Sticker Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Upload Image To Storage",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Describe Image (AI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Describe Image (AI)": {
+      "main": [
+        [
+          {
+            "node": "Save Image Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "381fe4e6-fb1a-45ee-ba8c-0c919d4c1b95",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
+  },
+  "nodeGroups": [],
+  "id": "UCuIKcaCVmLm38um",
+  "tags": []
+}
