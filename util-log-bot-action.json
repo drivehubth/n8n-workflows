@@ -1,0 +1,235 @@
+{
+  "name": "[Util] Log Bot Action",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "action_type"
+            },
+            {
+              "name": "status"
+            },
+            {
+              "name": "booking_id"
+            },
+            {
+              "name": "booking_uuid"
+            },
+            {
+              "name": "group_id"
+            },
+            {
+              "name": "actor"
+            },
+            {
+              "name": "execution_id"
+            }
+          ]
+        }
+      },
+      "id": "4bf7a54c-4491-4b58-af42-a8eae3940ce1",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "environment_variables",
+          "mode": "name"
+        }
+      },
+      "id": "fc6a1795-81c3-4258-852a-fb3fe143e6b1",
+      "name": "get env",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        0
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-table",
+              "name": "ai_action_log_table",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'AI_ACTION_LOG_TABLE').json.value }}",
+              "type": "string"
+            },
+            {
+              "id": "cfg-slack",
+              "name": "slack_error_channel",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'SLACK_ERROR_CHANNEL').json.value }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f64af3bc-f146-44cf-8790-80698a189a67",
+      "name": "config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "tableId": "={{ $('config').first().json.ai_action_log_table }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "action_type",
+              "fieldValue": "={{ $('When Executed by Another Workflow').item.json.action_type }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $('When Executed by Another Workflow').item.json.status }}"
+            },
+            {
+              "fieldId": "actor",
+              "fieldValue": "={{ $('When Executed by Another Workflow').item.json.actor || 'system' }}"
+            },
+            {
+              "fieldId": "booking_id",
+              "fieldValue": "={{ $('When Executed by Another Workflow').item.json.booking_id }}"
+            },
+            {
+              "fieldId": "booking_uuid",
+              "fieldValue": "={{ $('When Executed by Another Workflow').item.json.booking_uuid }}"
+            },
+            {
+              "fieldId": "group_id",
+              "fieldValue": "={{ $('When Executed by Another Workflow').item.json.group_id }}"
+            },
+            {
+              "fieldId": "execution_id",
+              "fieldValue": "={{ $('When Executed by Another Workflow').item.json.execution_id }}"
+            }
+          ]
+        }
+      },
+      "id": "5ae1fb02-f91d-421b-906b-caf75dec340c",
+      "name": "Insert Log",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "supabaseApi": {
+          "id": "GVsySdQtwHCQHKwR",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"channel\": \"{{ $(\"config\").first().json.slack_error_channel }}\", \"text\": \"⚠️ เก็บ audit log ไม่สำเร็จ — {{ $(\"When Executed by Another Workflow\").item.json.action_type }}\", \"attachments\": [ { \"color\": \"#E53935\", \"fields\": [ { \"title\": \"booking_id\", \"value\": \"{{ $(\"When Executed by Another Workflow\").item.json.booking_id }}\", \"short\": true }, { \"title\": \"table\", \"value\": \"{{ $(\"config\").first().json.ai_action_log_table }}\", \"short\": true }, { \"title\": \"execution\", \"value\": \"{{ $(\"When Executed by Another Workflow\").item.json.execution_id }}\", \"short\": true }, { \"title\": \"error\", \"value\": \"{{ $json.error?.message ?? JSON.stringify($json.error ?? {}) }}\", \"short\": false } ] } ] }",
+        "options": {}
+      },
+      "id": "2debe612-518a-42e2-87f6-d04e7858c6fc",
+      "name": "slack log error alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        16
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "sIdsmEfNyu8GM5as",
+          "name": "Slack Header Auth account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "get env",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get env": {
+      "main": [
+        [
+          {
+            "node": "config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "config": {
+      "main": [
+        [
+          {
+            "node": "Insert Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Log": {
+      "main": [
+        [],
+        [
+          {
+            "node": "slack log error alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "44be399a-db75-4acb-a542-ad21c40bad8f",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
+  },
+  "nodeGroups": [],
+  "id": "zTXeHZQI3t2LSKjA",
+  "tags": []
+}
