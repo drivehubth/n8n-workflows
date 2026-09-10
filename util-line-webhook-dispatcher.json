@@ -117,6 +117,76 @@
         976
       ],
       "onError": "continueRegularOutput"
+    },
+    {
+      "id": "26df882f-5321-4f36-a31e-be233b646717",
+      "name": "Filter Demo Message",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        1008,
+        1168
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "d-type",
+              "leftValue": "={{ $json.type }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "message"
+            },
+            {
+              "id": "d-msgtype",
+              "leftValue": "={{ $json.message?.type }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "text"
+            },
+            {
+              "id": "d-prefix",
+              "leftValue": "={{ ($json.message?.text ?? '').trim().toLowerCase() }}",
+              "operator": {
+                "operation": "startsWith",
+                "type": "string"
+              },
+              "rightValue": "buddy ai"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "7aee47c3-03c2-4f69-a56a-9af541ed0417",
+      "name": "Call Demo Classifier",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1456,
+        1168
+      ],
+      "parameters": {
+        "options": {},
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "xO2QfQFMlWH6gu4S"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "pinData": {},
@@ -160,6 +230,22 @@
             "node": "Call Register",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Filter Demo Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Demo Message": {
+      "main": [
+        [
+          {
+            "node": "Call Demo Classifier",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -171,7 +257,7 @@
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "1d7c0b3d-dea9-4842-a8a9-d1c9dbf45654",
+  "versionId": "ca3ba12c-9bec-40da-9967-a45a203aba23",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp",
