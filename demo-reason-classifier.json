@@ -1,0 +1,270 @@
+{
+  "name": "[Demo] Reason Classifier",
+  "nodes": [
+    {
+      "id": "09855055-a5a4-4d3b-b388-1407fb8cc462",
+      "name": "line event",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "4ede40a0-d730-4a70-9d84-4526f614e2b0",
+      "name": "classify reason",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        280,
+        0
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('line event').item.json.message.text.trim().slice(8).trim().startsWith(\":\") ? $('line event').item.json.message.text.trim().slice(8).trim().slice(1).trim() : $('line event').item.json.message.text.trim().slice(8).trim() }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "คุณคือผู้ช่วยจัดหมวดเหตุผลการยกเลิกหรือปฏิเสธการจองรถของ Drivehub\nข้อความที่ได้รับคือสิ่งที่พนักงานร้านเช่ารถพิมพ์เข้ามาในกลุ่ม LINE หลังกดปุ่มขอปฏิเสธหรือยกเลิกการจอง\n\nขั้นตอนที่ต้องทำทุกครั้ง\n1. เรียกเครื่องมือ booking_reasons ดึงรายการเหตุผลทั้งหมดก่อนเสมอ ห้ามตอบจากความจำ\n2. เลือกเหตุผลเพียงหนึ่งแถวจากผลลัพธ์ของเครื่องมือ\n3. คัดลอกค่า type, category_title_th, reason_uuid, reason_key, reason_title_th จากแถวนั้นแบบตรงตัวทุกตัวอักษร ห้ามพิมพ์ uuid เอง ห้ามดัดแปลง ห้ามหยิบค่าจากคนละแถวมาปนกัน\n\nด่านแรก ข้อความนี้บอกสาเหตุไว้หรือไม่\nสาเหตุคือข้อเท็จจริงที่อธิบายว่าทำไมงานนี้ถึงไม่เกิด เช่น ลูกค้าไม่ส่งเอกสาร รถไม่ว่าง จองซ้ำ ตกเครื่อง ติดต่อลูกค้าไม่ได้ ใช้รถนอกพื้นที่\nสิ่งต่อไปนี้ไม่ใช่สาเหตุ ยกเลิก ขอยกเลิก กดยกเลิก ยกเลิกได้เลย รบกวนยกเลิก ขออนุญาตยกเลิก ลูกค้าขอยกเลิก ลูกค้าแจ้งยกเลิก ลูกค้ายกเลิก เลข booking ชื่อคน คำทักทาย คำขอบคุณ\nถ้าอ่านจนจบแล้วไม่มีสาเหตุ ให้ตอบ type cancel หมวด คำขอจากลูกค้า reason_key other confidence low แล้วจบ\nห้ามเดาว่าทริปถูกยกเลิก ห้ามเดาว่าลูกค้ายังไม่ตัดสินใจ ห้ามเดาว่าลูกค้าจะจองใหม่ ถ้าข้อความไม่ได้พูดถึงเรื่องนั้น\n\nกติกาตัดสิน type\nถามว่า ถ้าลูกค้าไม่ถอย ร้านจะรับงานนี้ไหม\nถ้ารับ คือ cancel แปลว่าลูกค้าเป็นฝ่ายถอยเอง\nถ้าไม่รับ คือ reject แปลว่าร้านเป็นฝ่ายไม่รับงาน ไม่ว่าเหตุจะมาจากตัวร้านหรือจากตัวลูกค้า\n\nข้อควรระวัง\nคำว่า ยกเลิก ร้านใช้ปิดงานทุกแบบ ไม่ได้แปลว่า cancel ให้อ่านสาเหตุ ไม่ใช่อ่านคำกริยา\nอ่านให้จบประโยค ประโยคที่ขึ้นต้นว่า ลูกค้าขอยกเลิก แต่ลงท้ายด้วยเหตุที่ร้านให้บริการไม่ได้ ถือเป็น reject\nเหตุผลที่พูดถึงลูกค้าไม่ได้แปลว่า cancel เสมอ เอกสารลูกค้าไม่ครบ คือร้านไม่รับ จึงเป็น reject\n\nการเลือกภายในหมวดคำขอจากลูกค้า ให้ดูที่สาระของเหตุ\ntrip_cancelled ใช้เมื่อข้อความบอกว่าทริปไม่เกิดขึ้นแล้ว เช่น ยกเลิกการเดินทาง ไม่ได้ไปแล้ว เลื่อนทริป ตกเครื่องเลยมาไม่ได้ ที่พักไปไม่ได้ ไม่ใช้รถแล้ว ห้ามใช้กับข้อความที่บอกแค่ว่ามีการยกเลิก\nchange_booking ใช้เมื่อรายละเอียดการจองผิดหรือจะแก้ เช่น จองผิดวัน ผิดสถานที่ ผิดรุ่นรถ จะยกเลิกแล้วจองใหม่\nstill_deciding ใช้เมื่อข้อความบอกว่าลูกค้ายังไม่ตัดสินใจ ขอคิดดูก่อน ยังไม่คอนเฟิร์ม ยังไม่ชัวร์วัน\nduplicate_booking ใช้เมื่อจองซ้ำในระบบ Drivehub โดยไม่ตั้งใจ จองซ้ำกับร้านอื่นไม่นับ\nuse_discount_code ใช้เมื่อจะใช้ส่วนลดแล้วจองใหม่\nother ใช้กับที่เหลือทั้งหมด รวมถึง ลูกค้าได้รถจากที่อื่นแล้ว มีคนให้ยืมรถ ลูกค้าไม่มารับรถ ลูกค้าไม่รับรถหน้าร้าน ยกเลิกเช่าต่อ และข้อความที่ไม่บอกสาเหตุ\n\nฝั่ง reject ให้ระวังสองจุด\nเรื่องเงิน เช่น ไม่มีบัตรเครดิต ไม่จ่ายค่าประกัน ไม่จ่ายส่วนเพิ่ม ให้เลือก other ของหมวดเอกสารการเช่า / ค่าใช้จ่าย ไม่ใช่ documents_not_qualified เพราะบัตรเครดิตและเงินไม่ใช่เอกสาร\ndeposit_not_paid ใช้กับการโอนจองเท่านั้น เช่น ไม่โอนจอง ไม่สะดวกโอนจอง เลยกำหนดโอนจอง\n\nถ้าไม่มีเหตุผลไหนตรงจริง ให้เลือกแถวที่ reason_key เป็น other ของหมวดที่ใกล้ที่สุด ห้ามเลือกเหตุผลที่ความหมายไม่ตรงเพียงเพราะอยากเลี่ยง other\n\nตัวอย่างจากข้อความจริงที่ร้านเคยพิมพ์\nเจ้าหน้าที่ติดต่อลูกค้าไม่ได้ คือ reject ยืนยันงานไม่ได้ ร้านจึงไม่รับ\nไม่รับต่างชาติ คือ reject ร้านไม่รับ\nใช้รถนอกพื้นที่ คือ reject ผิดเงื่อนไขร้าน\nลูกค้ายังไม่โอนจอง คือ reject ไม่มีมัดจำ ร้านจึงไม่รับ\nเช่าขับเอง คือ reject ร้านไม่ให้เช่าขับเอง\n\nช่อง confidence ใช้ได้แค่สามค่าคือ high, medium, low เท่านั้น ห้ามใช้ตัวเลข ห้ามใช้ภาษาไทย\nช่อง why เขียนภาษาไทยหนึ่งประโยคสั้น บอกว่าอ่านคำไหนในข้อความแล้วถึงเลือกข้อนี้ ถ้าข้อความไม่มีสาเหตุให้เขียนว่าข้อความไม่ได้บอกสาเหตุ\nตอบเป็น JSON ตามรูปแบบที่กำหนดเท่านั้น ไม่ต้องอธิบายเพิ่ม"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "id": "11ea3218-0cdb-44a9-9a76-37aaa107c851",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        240
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.4"
+        },
+        "options": {
+          "reasoningEffort": "low",
+          "timeout": 60000
+        }
+      }
+    },
+    {
+      "id": "8efef256-8b5e-4b55-83e0-f329edd35f31",
+      "name": "booking_reasons",
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1.1,
+      "position": [
+        540,
+        240
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "booking_reasons"
+        },
+        "returnAll": true,
+        "descriptionType": "manual",
+        "toolDescription": "รายการเหตุผลการยกเลิก (cancel) และปฏิเสธ (reject) ทั้งหมดที่ร้านเช่ารถเลือกได้ แต่ละแถวมี type, category_title_th, reason_uuid, reason_key, reason_title_th เรียกโดยไม่ต้องส่งพารามิเตอร์เพื่อดึงทุกแถว"
+      }
+    },
+    {
+      "id": "f5610fbe-0af0-4914-8024-eda6b7e2d7fc",
+      "name": "reason json",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        680,
+        240
+      ],
+      "parameters": {
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "{\"type\":\"cancel\",\"category_title_th\":\"คำขอจากลูกค้า\",\"reason_uuid\":\"697bada6-1c51-4892-aa67-d69196bd5bae\",\"reason_key\":\"trip_cancelled\",\"reason_title_th\":\"ยกเลิกการเดินทาง\",\"confidence\":\"high\",\"why\":\"ข้อความบอกว่าลูกค้ายกเลิกการเดินทาง\"}"
+      }
+    },
+    {
+      "id": "699224a7-85be-4412-b5b8-ec87848a324d",
+      "name": "verify uuid in table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "booking_reasons"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "reason_uuid",
+              "keyValue": "={{ $json.output.reason_uuid }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "f67f8dfe-3baf-4a40-8ab4-873e501990a7",
+      "name": "build reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        840,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r-token",
+              "name": "reply_token",
+              "type": "string",
+              "value": "={{ $('line event').item.json.replyToken }}"
+            },
+            {
+              "id": "r-text",
+              "name": "reply_text",
+              "type": "string",
+              "value": "=ผลการจับหมวด\n\nข้อความ\n{{ $('line event').item.json.message.text.trim().slice(8).trim().startsWith(\":\") ? $('line event').item.json.message.text.trim().slice(8).trim().slice(1).trim() : $('line event').item.json.message.text.trim().slice(8).trim() }}\n\nตีความว่า : {{ $('classify reason').item.json.output.type === 'reject' ? 'ร้านปฏิเสธการจอง (reject)' : 'ลูกค้ายกเลิกการจอง (cancel)' }}\nหมวดหมู่ : {{ $('classify reason').item.json.output.category_title_th }}\nเหตุผล : {{ $('classify reason').item.json.output.reason_title_th }}\nเพราะ : {{ $('classify reason').item.json.output.why }}\nความมั่นใจ : {{ ({ high: \"สูง\", medium: \"ปานกลาง ควรให้คนตรวจซ้ำ\", low: \"ต่ำ ข้อความไม่ได้บอกสาเหตุ\" })[$('classify reason').item.json.output.confidence] }}\n\nreason_uuid\n{{ $('classify reason').item.json.output.reason_uuid }}\n{{ $json.reason_uuid ? 'ตรวจแล้ว รหัสนี้มีอยู่จริงในรายการเหตุผลของระบบ' : 'ไม่พบรหัสนี้ในรายการเหตุผลของระบบ' }}"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "cf8d1857-634c-4b27-bb22-3203a9d6796e",
+      "name": "line reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ replyToken: $json.reply_token, messages: [{ type: \"text\", text: $json.reply_text }] }) }}",
+        "options": {}
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "line event": {
+      "main": [
+        [
+          {
+            "node": "classify reason",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "classify reason": {
+      "main": [
+        [
+          {
+            "node": "verify uuid in table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "classify reason",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "booking_reasons": {
+      "ai_tool": [
+        [
+          {
+            "node": "classify reason",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "reason json": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "classify reason",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "verify uuid in table": {
+      "main": [
+        [
+          {
+            "node": "build reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "build reply": {
+      "main": [
+        [
+          {
+            "node": "line reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "versionId": "09bf3514-9468-4221-b2aa-b7e19d046e58",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
+  },
+  "nodeGroups": [],
+  "id": "xO2QfQFMlWH6gu4S",
+  "tags": []
+}
