@@ -1,0 +1,688 @@
+{
+  "name": "[Util] Sync Booking Reasons",
+  "nodes": [
+    {
+      "id": "6d6daf2d-bedb-4109-b768-281bcba894dc",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        96
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "a28a1387-59b9-4bad-bdbf-ce3315fd478c",
+      "name": "get env",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        96
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "environment_variables",
+          "mode": "name"
+        }
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "76859801-462a-417f-8ba7-e907736939e8",
+      "name": "config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        96
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c-gql",
+              "name": "graphql_url",
+              "type": "string",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DRIVEHUB_GRAPHQL_URL')?.json?.value }}"
+            },
+            {
+              "id": "c-mng",
+              "name": "manage_url",
+              "type": "string",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DRIVEHUB_MANAGE_URL')?.json?.value }}"
+            },
+            {
+              "id": "c-adm",
+              "name": "get_admin_token_flow_id",
+              "type": "string",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'GET_ADMIN_TOKEN_FLOW_ID')?.json?.value }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "3410fafc-01ed-49f9-90f6-5de0e701d359",
+      "name": "refresh admin token",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        96
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('config').first().json.get_admin_token_flow_id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "_": "refresh"
+          }
+        },
+        "options": {}
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "90c73e87-6cd1-4e83-bdc1-2c11bb924c58",
+      "name": "get token",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        96
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "cached_api_tokens",
+          "mode": "name"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "credential_name",
+              "condition": "eq",
+              "keyValue": "n8n"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "d5f4b5e6-54d5-4737-bee7-9be6470991e8",
+      "name": "query bookingReasons",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        96
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('config').first().json.graphql_url }}?op=bookingReasons",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-access-token",
+              "value": "={{ $('refresh admin token').first().json.response || $json.access_token }}"
+            },
+            {
+              "name": "x-refresh-token",
+              "value": "={{ $json.refresh_token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Origin",
+              "value": "={{ $('config').first().json.manage_url }}"
+            },
+            {
+              "name": "Referer",
+              "value": "={{ $('config').first().json.manage_url }}/"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ operationName: 'bookingReasons', query: 'query bookingReasons($type: BookingReasonType!, $visibleToRoles: BookingReasonVisibleRole) { bookingReasons(type: $type, visibleToRoles: $visibleToRoles) { cancel { uuid key title { th } reasons { uuid key title { th } reqReason } } reject { uuid key title { th } reasons { uuid key title { th } reqReason } } } }', variables: { type: 'ALL', visibleToRoles: 'STAFF' } }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "063ff228-7fce-43b2-941d-9606a959a559",
+      "name": "fetch ok?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "ok",
+              "leftValue": "={{ $json.statusCode === 200 && !$json.body?.errors && !!$json.body?.data?.bookingReasons }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "8d78478f-bc23-4b7c-8428-c0f8dd4fb8af",
+      "name": "clear table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1568,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "booking_reasons",
+          "mode": "name"
+        },
+        "matchType": "anyCondition",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "type",
+              "condition": "isNotEmpty"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "53fffabe-655b-4f10-a486-ab59bffe3863",
+      "name": "TODO sheet util-error-handler (DB-5458)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        192
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "9d2593e7-5300-41bc-befc-2c60c3a4cb66",
+      "name": "pick lists",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1792,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p-cancel",
+              "name": "cancel",
+              "type": "array",
+              "value": "={{ $('query bookingReasons').first().json.body.data.bookingReasons.cancel }}"
+            },
+            {
+              "id": "p-reject",
+              "name": "reject",
+              "type": "array",
+              "value": "={{ $('query bookingReasons').first().json.body.data.bookingReasons.reject }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "c3677375-7ba8-43af-915e-a7e896e5e087",
+      "name": "split cancel",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        -128
+      ],
+      "parameters": {
+        "fieldToSplitOut": "cancel",
+        "options": {}
+      }
+    },
+    {
+      "id": "cb2ec48f-1d11-4385-ae53-22e0a1fa531f",
+      "name": "tag cancel",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2240,
+        -128
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "tc-type",
+              "name": "type",
+              "type": "string",
+              "value": "cancel"
+            },
+            {
+              "id": "tc-title",
+              "name": "category_title_th",
+              "type": "string",
+              "value": "={{ $json.title.th }}"
+            },
+            {
+              "id": "tc-reasons",
+              "name": "reasons",
+              "type": "array",
+              "value": "={{ $json.reasons }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b9141704-a665-41d4-acfe-afb17de20d13",
+      "name": "split cancel reasons",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        -128
+      ],
+      "parameters": {
+        "fieldToSplitOut": "reasons",
+        "include": "allOtherFields",
+        "options": {}
+      }
+    },
+    {
+      "id": "80fd7444-958c-448c-9eb6-dae34119b8b1",
+      "name": "split reject",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        128
+      ],
+      "parameters": {
+        "fieldToSplitOut": "reject",
+        "options": {}
+      }
+    },
+    {
+      "id": "1b343bb0-ba76-4fba-a32f-32db098ff8eb",
+      "name": "tag reject",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2240,
+        128
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "tr-type",
+              "name": "type",
+              "type": "string",
+              "value": "reject"
+            },
+            {
+              "id": "tr-title",
+              "name": "category_title_th",
+              "type": "string",
+              "value": "={{ $json.title.th }}"
+            },
+            {
+              "id": "tr-reasons",
+              "name": "reasons",
+              "type": "array",
+              "value": "={{ $json.reasons }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d113497f-a563-401d-aaab-4c2caad6ea03",
+      "name": "split reject reasons",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        128
+      ],
+      "parameters": {
+        "fieldToSplitOut": "reasons",
+        "include": "allOtherFields",
+        "options": {}
+      }
+    },
+    {
+      "id": "e300bac4-8332-42ab-ac59-d2f8c099af8c",
+      "name": "insert booking_reasons",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2688,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "booking_reasons",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "category_title_th": "={{ $json.category_title_th }}",
+            "reason_key": "={{ $json.reasons.key }}",
+            "reason_title_th": "={{ $json.reasons.title.th }}",
+            "reason_uuid": "={{ $json.reasons.uuid }}",
+            "type": "={{ $json.type }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "type",
+              "id": "type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "category_title_th",
+              "id": "category_title_th",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "reason_uuid",
+              "id": "reason_uuid",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "reason_key",
+              "id": "reason_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": true,
+              "defaultMatch": false,
+              "display": true,
+              "displayName": "reason_title_th",
+              "id": "reason_title_th",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": true,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "get env",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get env": {
+      "main": [
+        [
+          {
+            "node": "config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "config": {
+      "main": [
+        [
+          {
+            "node": "refresh admin token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "refresh admin token": {
+      "main": [
+        [
+          {
+            "node": "get token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get token": {
+      "main": [
+        [
+          {
+            "node": "query bookingReasons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "query bookingReasons": {
+      "main": [
+        [
+          {
+            "node": "fetch ok?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fetch ok?": {
+      "main": [
+        [
+          {
+            "node": "clear table",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TODO sheet util-error-handler (DB-5458)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "clear table": {
+      "main": [
+        [
+          {
+            "node": "pick lists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pick lists": {
+      "main": [
+        [
+          {
+            "node": "split cancel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "split reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "split cancel": {
+      "main": [
+        [
+          {
+            "node": "tag cancel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tag cancel": {
+      "main": [
+        [
+          {
+            "node": "split cancel reasons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "split cancel reasons": {
+      "main": [
+        [
+          {
+            "node": "insert booking_reasons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "split reject": {
+      "main": [
+        [
+          {
+            "node": "tag reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tag reject": {
+      "main": [
+        [
+          {
+            "node": "split reject reasons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "split reject reasons": {
+      "main": [
+        [
+          {
+            "node": "insert booking_reasons",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "versionId": "337143cf-d88a-4e7b-b2b8-6a8a80c95eba",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
+  },
+  "nodeGroups": [],
+  "id": "xI6uKILSHwbMZrQ5",
+  "tags": []
+}
