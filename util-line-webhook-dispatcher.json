@@ -51,6 +51,12 @@
               "name": "register_flow_id",
               "type": "string",
               "value": "={{ $('get env').all().find(r => r.json.name === 'REGISTER_FLOW_ID').json.value }}"
+            },
+            {
+              "id": "cfg-demo-id",
+              "name": "demo_flow_id",
+              "type": "string",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DEMO_CLASSIFIER_FLOW_ID').json.value }}"
             }
           ]
         },
@@ -157,6 +163,16 @@
                 "type": "string"
               },
               "rightValue": "buddy ai"
+            },
+            {
+              "id": "d-notempty",
+              "leftValue": "={{ (($json.message?.text ?? '').trim().slice(8).trim().startsWith(':') ? ($json.message?.text ?? '').trim().slice(8).trim().slice(1).trim() : ($json.message?.text ?? '').trim().slice(8).trim()) }}",
+              "operator": {
+                "operation": "notEmpty",
+                "type": "string",
+                "singleValue": true
+              },
+              "rightValue": ""
             }
           ],
           "options": {
@@ -183,7 +199,7 @@
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "xO2QfQFMlWH6gu4S"
+          "value": "={{ $('config').first().json.demo_flow_id }}"
         }
       },
       "onError": "continueRegularOutput"
@@ -257,7 +273,7 @@
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "ca3ba12c-9bec-40da-9967-a45a203aba23",
+  "versionId": "9cd8c68c-b06b-491a-898d-6b9bac056ed5",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp",
