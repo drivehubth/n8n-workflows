@@ -143,7 +143,7 @@
               "id": "r-text",
               "name": "reply_text",
               "type": "string",
-              "value": "=ผลการจับหมวด\n\nข้อความ\n{{ $('line event').item.json.message.text.trim().slice(8).trim().startsWith(\":\") ? $('line event').item.json.message.text.trim().slice(8).trim().slice(1).trim() : $('line event').item.json.message.text.trim().slice(8).trim() }}\n\nตีความว่า : {{ $('classify reason').item.json.output.type === 'reject' ? 'ร้านปฏิเสธการจอง (reject)' : 'ลูกค้ายกเลิกการจอง (cancel)' }}\nหมวดหมู่ : {{ $('classify reason').item.json.output.category_title_th }}\nเหตุผล : {{ $('classify reason').item.json.output.reason_title_th }}\nเพราะ : {{ $('classify reason').item.json.output.why }}\nความมั่นใจ : {{ ({ high: \"สูง\", medium: \"ปานกลาง ควรให้คนตรวจซ้ำ\", low: \"ต่ำ ข้อความไม่ได้บอกสาเหตุ\" })[$('classify reason').item.json.output.confidence] }}\n\nreason_uuid\n{{ $('classify reason').item.json.output.reason_uuid }}\n{{ $json.reason_uuid ? 'ตรวจแล้ว รหัสนี้มีอยู่จริงในรายการเหตุผลของระบบ' : 'ไม่พบรหัสนี้ในรายการเหตุผลของระบบ' }}"
+              "value": "=Reason Classification\n\nMessage\n{{ $('line event').item.json.message.text.trim().slice(8).trim().startsWith(\":\") ? $('line event').item.json.message.text.trim().slice(8).trim().slice(1).trim() : $('line event').item.json.message.text.trim().slice(8).trim() }}\n\nType : {{ $('classify reason').item.json.output.type === 'reject' ? 'Reject (ร้านปฏิเสธการจอง)' : 'Cancel (ลูกค้ายกเลิกการจอง)' }}\nCategory : {{ $('classify reason').item.json.output.category_title_th }}\nReason : {{ $('classify reason').item.json.output.reason_title_th }}\nWhy : {{ $('classify reason').item.json.output.why }}\nConfidence : {{ ({ high: \"High\", medium: \"Medium (ควรให้คนตรวจซ้ำ)\", low: \"Low (ข้อความไม่ได้บอกสาเหตุ)\" })[$('classify reason').item.json.output.confidence] }}\n\nreason_uuid\n{{ $('classify reason').item.json.output.reason_uuid }}\n{{ $json.reason_uuid ? 'Verified in booking_reasons' : 'Not found in booking_reasons' }}"
             }
           ]
         },
@@ -258,7 +258,7 @@
     "executionOrder": "v1",
     "availableInMCP": true
   },
-  "versionId": "09bf3514-9468-4221-b2aa-b7e19d046e58",
+  "versionId": "5d6c0d3b-3632-4a41-9e00-51ca75a155dc",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp",
