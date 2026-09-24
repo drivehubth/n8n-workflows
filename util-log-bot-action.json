@@ -29,7 +29,7 @@
           ]
         }
       },
-      "id": "4bf7a54c-4491-4b58-af42-a8eae3940ce1",
+      "id": "ecb6aacc-1d0d-42ff-baa3-6e8badfc7a1a",
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
@@ -47,7 +47,7 @@
           "mode": "name"
         }
       },
-      "id": "fc6a1795-81c3-4258-852a-fb3fe143e6b1",
+      "id": "3baa7bdb-d6ff-4a4a-8115-a424c91886fb",
       "name": "get env",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
@@ -72,12 +72,18 @@
               "name": "slack_error_channel",
               "value": "={{ $('get env').all().find(r => r.json.name === 'SLACK_ERROR_CHANNEL').json.value }}",
               "type": "string"
+            },
+            {
+              "id": "cfg-discord",
+              "name": "discord_error_webhook_url",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DISCORD_ERROR_WEBHOOK_URL')?.json?.value ?? '' }}",
+              "type": "string"
             }
           ]
         },
         "options": {}
       },
-      "id": "f64af3bc-f146-44cf-8790-80698a189a67",
+      "id": "22f50045-4df8-423b-a3e4-4cda363250ff",
       "name": "config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -123,7 +129,7 @@
           ]
         }
       },
-      "id": "5ae1fb02-f91d-421b-906b-caf75dec340c",
+      "id": "526f90bd-2d94-4381-926b-7e134c147815",
       "name": "Insert Log",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -133,13 +139,13 @@
       ],
       "retryOnFail": true,
       "maxTries": 2,
+      "onError": "continueErrorOutput",
       "credentials": {
         "supabaseApi": {
-          "id": "GVsySdQtwHCQHKwR",
+          "id": "LaAnXj36Ta32koTf",
           "name": "Supabase account"
         }
-      },
-      "onError": "continueErrorOutput"
+      }
     },
     {
       "parameters": {
@@ -152,7 +158,7 @@
         "jsonBody": "={ \"channel\": \"{{ $(\"config\").first().json.slack_error_channel }}\", \"text\": \"⚠️ เก็บ audit log ไม่สำเร็จ — {{ $(\"When Executed by Another Workflow\").item.json.action_type }}\", \"attachments\": [ { \"color\": \"#E53935\", \"fields\": [ { \"title\": \"booking_id\", \"value\": \"{{ $(\"When Executed by Another Workflow\").item.json.booking_id }}\", \"short\": true }, { \"title\": \"table\", \"value\": \"{{ $(\"config\").first().json.ai_action_log_table }}\", \"short\": true }, { \"title\": \"execution\", \"value\": \"{{ $(\"When Executed by Another Workflow\").item.json.execution_id }}\", \"short\": true }, { \"title\": \"error\", \"value\": \"{{ $json.error?.message ?? JSON.stringify($json.error ?? {}) }}\", \"short\": false } ] } ] }",
         "options": {}
       },
-      "id": "2debe612-518a-42e2-87f6-d04e7858c6fc",
+      "id": "b860ba7b-2ed6-4331-b9ab-f680a557b3b7",
       "name": "slack log error alert",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
@@ -160,12 +166,31 @@
         896,
         16
       ],
+      "onError": "continueRegularOutput",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "sIdsmEfNyu8GM5as",
+          "id": "z4ZygH5NmXS2HJjn",
           "name": "Slack Header Auth account"
         }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('config').first().json.discord_error_webhook_url }}?wait=true",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"content\": \"⚠️ เก็บ audit log ไม่สำเร็จ — {{ $(\"When Executed by Another Workflow\").item.json.action_type }}\", \"embeds\": [ { \"color\": 15022389, \"fields\": [ { \"name\": \"booking_id\", \"value\": \"{{ $(\"When Executed by Another Workflow\").item.json.booking_id || '-' }}\", \"inline\": true }, { \"name\": \"table\", \"value\": \"{{ $(\"config\").first().json.ai_action_log_table || '-' }}\", \"inline\": true }, { \"name\": \"execution\", \"value\": \"{{ $(\"When Executed by Another Workflow\").item.json.execution_id || '-' }}\", \"inline\": true }, { \"name\": \"error\", \"value\": \"{{ JSON.stringify(String($json.error?.message || JSON.stringify($json.error ?? {})).slice(0, 1024)).slice(1, -1) }}\", \"inline\": false } ] } ] }",
+        "options": {}
       },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        896,
+        192
+      ],
+      "id": "5ce264c4-eb5f-5a0c-826c-db80ed936f84",
+      "name": "discord log error alert",
       "onError": "continueRegularOutput"
     }
   ],
@@ -212,24 +237,24 @@
             "node": "slack log error alert",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "discord log error alert",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "44be399a-db75-4acb-a542-ad21c40bad8f",
   "meta": {
-    "aiBuilderAssisted": true,
-    "builderVariant": "mcp",
-    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
+    "templateCredsSetupCompleted": true
   },
-  "nodeGroups": [],
-  "id": "zTXeHZQI3t2LSKjA",
   "tags": []
 }
