@@ -17,14 +17,14 @@
       "type": "n8n-nodes-base.gmailTrigger",
       "typeVersion": 1.3,
       "position": [
-        4528,
-        2320
+        6848,
+        2528
       ],
-      "id": "b472b123-b4ff-4d94-bf08-f86232237ce0",
+      "id": "c2109927-d2c0-448a-a26c-9c8e9208884e",
       "name": "GetNewBookingGmail",
       "credentials": {
         "gmailOAuth2": {
-          "id": "wqlOQpAtr6EAUg84",
+          "id": "am9InvuBN9KvdHMJ",
           "name": "Buddy AI Gmail account"
         }
       }
@@ -54,10 +54,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        5664,
-        2192
+        7984,
+        2400
       ],
-      "id": "2d6bad54-5e7a-40a8-b70d-96070cb52792",
+      "id": "7042f902-01ed-4984-bb2b-052a798f6f2a",
       "name": "get booking detail",
       "retryOnFail": true,
       "maxTries": 2,
@@ -81,10 +81,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        5152,
-        2320
+        7472,
+        2528
       ],
-      "id": "fad327ba-8722-4b24-a3ee-bcf5f2758346",
+      "id": "f2977414-1949-466f-8d0e-feb634d6ecc1",
       "name": "extract booking id"
     },
     {
@@ -110,21 +110,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        7216,
-        1824
+        9536,
+        2032
       ],
-      "id": "b0f93f7f-d997-4ea2-8415-b92b16587c06",
+      "id": "1fdf4b8d-e5a6-4302-b9f3-2d20a9a43fa0",
       "name": "push to dealer line",
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
       "credentials": {
         "httpBearerAuth": {
-          "id": "wnEM9E2aVqJcfDpe",
+          "id": "XMnV9lPJ7S0YerCT",
           "name": "Dealer LINE OA Auth"
         }
-      },
-      "onError": "continueErrorOutput"
+      }
     },
     {
       "parameters": {
@@ -151,10 +151,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        7664,
-        1808
+        9984,
+        2016
       ],
-      "id": "498c3e0f-53c8-4c3d-a9c7-081447130d36",
+      "id": "751889d8-3ddf-4ab9-82be-5d98705196bd",
       "name": "post booking done",
       "retryOnFail": true,
       "maxTries": 2,
@@ -187,6 +187,18 @@
               "id": "d12c8ff5-948d-4bbc-a480-9caff295810f",
               "name": "slack_error_channel",
               "value": "={{ $('get env').all().find(r => r.json.name === 'SLACK_ERROR_CHANNEL').json.value }}",
+              "type": "string"
+            },
+            {
+              "id": "9c8762ab-0552-50a9-96ea-9ff4b2efe91e",
+              "name": "discord_ops_webhook_url",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DISCORD_OPS_WEBHOOK_URL')?.json?.value ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "3268475e-2d6e-5b72-96ce-361dd92fc463",
+              "name": "discord_error_webhook_url",
+              "value": "={{ $('get env').all().find(r => r.json.name === 'DISCORD_ERROR_WEBHOOK_URL')?.json?.value ?? '' }}",
               "type": "string"
             },
             {
@@ -232,10 +244,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4976,
-        2176
+        7296,
+        2384
       ],
-      "id": "c4df3ac2-e65c-41b8-8e51-4c89c781a6aa",
+      "id": "5a6f51e9-bf46-4222-a1e2-42662ea86b6e",
       "name": "config",
       "executeOnce": true
     },
@@ -248,11 +260,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        7664,
-        1712
+        9984,
+        1920
       ],
       "typeVersion": 1,
-      "id": "125a22ed-cbe3-49b5-bdb7-1aeb566dfb45",
+      "id": "aba034aa-afad-4a0c-a7c1-38f3afeebfda",
       "name": "Sticky Note"
     },
     {
@@ -276,10 +288,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        5424,
-        2192
+        7744,
+        2400
       ],
-      "id": "6fb7e1c0-0279-4b0c-ac81-cc52177be172",
+      "id": "5b9a5ef2-13ef-4b54-847a-32187db23450",
       "name": "get cached token (booking)"
     },
     {
@@ -310,10 +322,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        6208,
-        2048
+        8528,
+        2256
       ],
-      "id": "e833db36-406b-4449-8f96-10f8a3e21012",
+      "id": "b822c183-77b4-4ee3-b70a-83a4c0a1c71d",
       "name": "booking detail ok?"
     },
     {
@@ -352,10 +364,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        5952,
-        2208
+        8272,
+        2416
       ],
-      "id": "ff82aeda-07ab-4224-8f4d-e493260c76a4",
+      "id": "194b5493-354f-407f-b248-b8eb3582b5d2",
       "name": "booking 401?"
     },
     {
@@ -392,10 +404,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        6208,
-        2304
+        8528,
+        2512
       ],
-      "id": "f8d5b155-a8d9-4117-b2f7-34abc21a3b15",
+      "id": "681eeb13-1148-4ed2-8066-e3b120a2f008",
       "name": "refresh token (booking)",
       "retryOnFail": true,
       "waitBetweenTries": 5000,
@@ -425,10 +437,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        7664,
-        2304
+        9984,
+        2512
       ],
-      "id": "a1a27d91-2bea-4131-ad0e-8309cfe5adfe",
+      "id": "495b6495-dc7f-451b-8290-71e704fdfa67",
       "name": "set error (booking)"
     },
     {
@@ -452,10 +464,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        7440,
-        1808
+        9760,
+        2016
       ],
-      "id": "3fe5d12a-ad3a-4623-9f1c-7645ac146c4b",
+      "id": "73af416f-cf4b-4e58-8e7f-f4b471a2af23",
       "name": "get cached token (done)"
     },
     {
@@ -494,10 +506,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        7888,
-        1824
+        10208,
+        2032
       ],
-      "id": "9809b65a-9203-4c1a-8498-4a0cb306232f",
+      "id": "f31ddbce-6e50-4a38-9e1c-717889979e35",
       "name": "booking done 401?"
     },
     {
@@ -534,10 +546,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        8128,
-        1808
+        10448,
+        2016
       ],
-      "id": "75a25b29-8f32-4780-9838-dc2cb5629281",
+      "id": "e8b12bb9-bde7-427d-8a32-81aa490637d2",
       "name": "refresh token (done)",
       "retryOnFail": true,
       "waitBetweenTries": 5000,
@@ -572,10 +584,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        6944,
-        2016
+        9264,
+        2224
       ],
-      "id": "9b9075b3-8018-4fc8-9192-aba9423b1a79",
+      "id": "ebb6be1b-83ea-4486-b629-092dfbe1a997",
       "name": "group id found?"
     },
     {
@@ -601,10 +613,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        7664,
-        2016
+        9984,
+        2224
       ],
-      "id": "082a737e-e070-40db-916d-93d248997239",
+      "id": "2d00a84d-fcb5-40a6-aa25-a0b3c1abfbed",
       "name": "set error (group id)"
     },
     {
@@ -621,21 +633,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        8432,
-        2208
+        10752,
+        2416
       ],
-      "id": "59c7c79e-aa0c-4484-a41f-986bc592799f",
+      "id": "60d0e0ca-81ee-46a6-b476-3265f5e8e2a7",
       "name": "slack error alert",
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "sIdsmEfNyu8GM5as",
+          "id": "z4ZygH5NmXS2HJjn",
           "name": "Slack Header Auth account"
         }
-      },
-      "onError": "continueErrorOutput"
+      }
     },
     {
       "parameters": {
@@ -703,10 +715,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        8656,
-        2224
+        10976,
+        2432
       ],
-      "id": "bf21ee5a-ed77-4cb6-9cf1-895e1a6b9616",
+      "id": "bbdf9197-28b3-409b-a597-7045dec23e3c",
       "name": "log error to table"
     },
     {
@@ -737,10 +749,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        7888,
-        1664
+        10208,
+        1872
       ],
-      "id": "300c7d76-c577-4020-ab7b-3effb7ef1926",
+      "id": "915cf3ba-ccdc-4630-930f-679f96f40c33",
       "name": "booking done ok?"
     },
     {
@@ -766,25 +778,25 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        7664,
-        2160
+        9984,
+        2368
       ],
-      "id": "8bf70ddc-bfc4-43f6-bfaf-747c22d240ad",
+      "id": "2d31ac3c-a900-43fe-8a9d-7c0112ec13c3",
       "name": "set error (sheet)"
     },
     {
       "parameters": {
-        "content": "## 🚨 คู่มือทีม Ops — ทำยังไงเมื่อมีปัญหา\n\n### เคส 1: Server down (แจ้งใน channel dev)\n\n1. เห็นแจ้งเตือน \"n8n down\" → เข้าหลังบ้าน ดู booking ที่**ยังไม่มี Done**\n2. Copy booking detail ส่งเข้า LINE group ของ dealer เอง\n3. **ส่งเสร็จ 1 ใบ → กดปุ่ม Done ทันที 1 ใบ** (ห้ามรวบไปกดทีหลัง!)\n4. ทำวนไปจนกว่า server จะกลับมา\n\n### เคส 2: Server กลับมา (bot แจ้งใน channel ops)\n\nBot จะสรุปให้ว่ามี booking ค้างกี่ใบ เลขอะไรบ้าง\n\n1. อ่านข้อความ: **operation ส่งทั้งหมดถึงเลขที่ bot ระบุ** เป็นตัวสุดท้าย\n2. Booking ใหม่หลังจากเลขนั้น → bot ส่งเอง\n3. ส่งครบแล้วไล่เช็กกับรายการในข้อความอีกรอบว่าไม่ตกหล่น\n4. อย่าลืมกด Done ทุกใบที่ส่ง\n\n### เคส 3: Error รายใบ (แจ้งใน channel error)\n\nข้อความจะบอก booking ID + node ที่พัง\n\n1. เช็กใน LINE group ว่า booking นั้นถูกส่งไปแล้วหรือยัง\n2. ยังไม่ถูกส่ง → ส่ง manual + กด Done\n3. ส่งแล้วแต่ error ตอน mark done → กด Done ในหลังบ้านอย่างเดียวพอ\n4. แจ้งทีม dev\n\n**Note:** error log table = fallback เมื่อ Slack พังเท่านั้น\n\n---\n💡 กฎเหล็กข้อเดียว: **ส่งแล้วต้องกด Done ทันที** — bot ใช้สถานะนี้ตัดสินใจว่าจะส่งซ้ำหรือไม่",
+        "content": "## 🚨 คู่มือทีม Ops — ทำยังไงเมื่อมีปัญหา\n\n### เคส 1: Server down (แจ้งใน channel dev)\n\n1. เห็นแจ้งเตือน \"n8n down\" → เข้าหลังบ้าน ดู booking ที่**ยังไม่มี Done**\n2. Copy booking detail ส่งเข้า LINE group ของ dealer เอง\n3. **ส่งเสร็จ 1 ใบ → กดปุ่ม Done ทันที 1 ใบ** (ห้ามรวบไปกดทีหลัง!)\n4. ทำวนไปจนกว่า server จะกลับมา\n\n### เคส 2: Server กลับมา (bot แจ้งใน channel ops)\n\nBot จะสรุปให้ว่ามี booking ค้างกี่ใบ เลขอะไรบ้าง\n\n1. อ่านข้อความ: **operation ส่งทั้งหมดถึงเลขที่ bot ระบุ** เป็นตัวสุดท้าย\n2. Booking ใหม่หลังจากเลขนั้น → bot ส่งเอง\n3. ส่งครบแล้วไล่เช็กกับรายการในข้อความอีกรอบว่าไม่ตกหล่น\n4. อย่าลืมกด Done ทุกใบที่ส่ง\n\n### เคส 3: Error รายใบ (แจ้งใน channel error)\n\nข้อความจะบอก booking ID + node ที่พัง\n\n1. เช็กใน LINE group ว่า booking นั้นถูกส่งไปแล้วหรือยัง\n2. ยังไม่ถูกส่ง → ส่ง manual + กด Done\n3. ส่งแล้วแต่ error ตอน mark done → กด Done ในหลังบ้านอย่างเดียวพอ\n4. แจ้งทีม dev\n\n**Note:** error log table = fallback เมื่อ Slack/Discord พังเท่านั้น\n\n---\n💡 กฎเหล็กข้อเดียว: **ส่งแล้วต้องกด Done ทันที** — bot ใช้สถานะนี้ตัดสินใจว่าจะส่งซ้ำหรือไม่",
         "height": 800,
         "width": 640
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        4096,
-        1312
+        6416,
+        1520
       ],
       "typeVersion": 1,
-      "id": "90c0d661-1d7d-427a-905a-392175f9942e",
+      "id": "9636686c-66aa-4e27-a70c-34effa34a913",
       "name": "Sticky Note1"
     },
     {
@@ -829,10 +841,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4896,
-        1904
+        7216,
+        2112
       ],
-      "id": "9de56038-6ffa-4116-b169-735f009f55d1",
+      "id": "6109e7ba-d462-490f-98e4-e8383bac472d",
       "name": "backlog flags"
     },
     {
@@ -863,10 +875,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        5104,
-        1904
+        7424,
+        2112
       ],
-      "id": "d2c0f681-6e43-4600-9c9e-8485339b783f",
+      "id": "304da379-69d8-4e5f-9bf9-468c391eac08",
       "name": "backlog mode?"
     },
     {
@@ -892,22 +904,22 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        5344,
-        1888
+        7664,
+        2096
       ],
-      "id": "15db649a-151f-461d-a6c7-bce7000f5b05",
+      "id": "46a91fd4-1fc1-4840-a3cf-b3feacbb8da0",
       "name": "slack backlog alert",
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "executeOnce": true,
+      "onError": "continueRegularOutput",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "77Yr93Km4SFaBpex",
-          "name": "Uptime Kuma Auth Account"
+          "id": "z4ZygH5NmXS2HJjn",
+          "name": "Slack Header Auth account"
         }
-      },
-      "onError": "continueRegularOutput"
+      }
     },
     {
       "parameters": {
@@ -937,10 +949,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        5952,
-        2032
+        8272,
+        2240
       ],
-      "id": "70da8775-67d7-4f26-ac0d-6e5ab0c3d408",
+      "id": "e3e6051c-ae61-4d2d-977d-fc0a6133bfcf",
       "name": "booking done?"
     },
     {
@@ -955,10 +967,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        4768,
-        2176
+        7088,
+        2384
       ],
-      "id": "959b3eef-4b4d-4436-83d5-d016381a51bb",
+      "id": "f721794d-e1e5-45e7-92ab-6cad247adcd9",
       "name": "get env",
       "executeOnce": true
     },
@@ -1055,10 +1067,10 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        7440,
-        1600
+        9760,
+        1808
       ],
-      "id": "64105d0d-38d8-4ede-aff4-665a889f32dc",
+      "id": "bbda250e-256c-41ab-b9ab-828fe5de6d9c",
       "name": "log booking sent",
       "onError": "continueRegularOutput"
     },
@@ -1083,10 +1095,10 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        6464,
-        2032
+        8784,
+        2240
       ],
-      "id": "2a6446b2-2a8a-4fce-8c9f-673e1291e19b",
+      "id": "a924be79-da60-4c5a-8566-1323c111a882",
       "name": "get dealer group id",
       "alwaysOutputData": true,
       "retryOnFail": true,
@@ -1122,50 +1134,59 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        6688,
-        2032
+        9008,
+        2240
       ],
-      "id": "1591df49-2b16-48b1-b29e-a9eae56922c7",
+      "id": "fc6f5455-2908-4621-8880-e4b7f5300899",
       "name": "table ok?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('config').first().json.discord_error_webhook_url }}?wait=true",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"embeds\": [\n    {\n      \"color\": {{ $json.error?.status === 409 ? 16098851 : 15022389 }},\n      \"title\": \"{{ $json.error?.status === 409 ? '⚠️ Dealer Notify — Warning (ส่งซ้ำ · ข้อความส่งถึงแล้ว)' : '🚨 Dealer Notify — Error' }}\",\n      \"fields\": [\n        { \"name\": \"Node ที่ fail\", \"value\": \"`{{ $json.error?.source_node ?? $prevNode.name }}`\", \"inline\": true },\n        { \"name\": \"Booking ID\", \"value\": \"`{{ $('extract booking id').first().json.booking_id ?? 'N/A' }}`\", \"inline\": true },\n        { \"name\": \"Execution ID\", \"value\": \"`{{ $execution.id }}`\", \"inline\": true },\n        { \"name\": \"เวลา\", \"value\": \"{{ $now.setZone('Asia/Bangkok').toFormat('dd/MM/yyyy HH:mm') }}\", \"inline\": true },\n        { \"name\": \"Dealer\", \"value\": \"{{ $('get booking detail').item?.json?.data?.booking?.dealership?.name ?? 'N/A' }}\\n`{{ $('get booking detail').item?.json?.data?.booking?.dealership_uuid ?? 'N/A' }}`\", \"inline\": true },\n        { \"name\": \"Branch\", \"value\": \"{{ $('get booking detail').item?.json?.data?.booking?.branch?.name ?? 'N/A' }}\\n`{{ $('get booking detail').item?.json?.data?.booking?.branch_uuid ?? 'N/A' }}`\", \"inline\": true },\n        { \"name\": \"{{ $json.error?.status === 409 ? 'ℹ️ รายละเอียด' : '❌ Error' }}\", \"value\": \"```{{ JSON.stringify(String($json.error?.message ?? $json.error ?? '(no message)').slice(0, 1000)).slice(1, -1) }}```\", \"inline\": false },\n        { \"name\": \"ลิงก์\", \"value\": \"[ดู Execution ใน n8n]({{ $('config').first().json.n8n_base_url }}/workflow/{{ $workflow.id }}/executions/{{ $execution.id }}) · [เปิด Manage]({{ $('config').first().json.manage_url }}/admin/home)\", \"inline\": false }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        10752,
+        2592
+      ],
+      "id": "050f4a4f-9043-5c49-9ad5-8e59d0e508bd",
+      "name": "discord error alert",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('config').first().json.discord_ops_webhook_url }}?wait=true",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"🟢 n8n กลับมาทำงานแล้ว — มี booking ค้าง {{ $json.item_count }} รายการ\",\n  \"embeds\": [\n    {\n      \"description\": \"🙏 ส่ง manual ทั้งหมด **ถึง #{{ $json.max_id }}** เป็นตัวสุดท้าย (+ กด **Done** ในหลังบ้านทุกตัวที่ส่ง)\\n🤖 Booking ใหม่หลัง #{{ $json.max_id }} bot จะส่งเองตามปกติ\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        7664,
+        1936
+      ],
+      "id": "d42e29b4-a717-517b-a579-8bdc9d20944d",
+      "name": "discord backlog alert",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "executeOnce": true
     }
   ],
-  "pinData": {
-    "GetNewBookingGmail": [
-      {
-        "json": {
-          "id": "19fa2072a70480ec",
-          "threadId": "19fa2072a70480ec",
-          "snippet": "คุณได้รับการจองใหม่ ตรวจสอบสถานะ หมายเลขการจอง 3608270 สถานะการจอง รายละเอียดการจอง ข้อมูลผู้เช่ารถ test setset +66324534534 retdst@gmail.com ข้อมูลบริษัทรถเช่า C00113 Mod van service สาขา",
-          "payload": {
-            "mimeType": "text/html"
-          },
-          "sizeEstimate": 128333,
-          "historyId": "2012902",
-          "internalDate": "1785129805000",
-          "labels": [
-            {
-              "id": "INBOX",
-              "name": "INBOX"
-            },
-            {
-              "id": "CATEGORY_UPDATES",
-              "name": "CATEGORY_UPDATES"
-            },
-            {
-              "id": "UNREAD",
-              "name": "UNREAD"
-            }
-          ],
-          "From": "Drivehub <no-reply@transaction.drivehub.co>",
-          "Subject": "[ใช้ในการทดสอบระบบ][Drivehub] #3608270- คุณได้รับการจองใหม่จาก DRIVEHUB",
-          "To": "test@drivehub.co"
-        },
-        "pairedItem": {
-          "item": 0
-        }
-      }
-    ]
-  },
+  "pinData": {},
   "connections": {
     "GetNewBookingGmail": {
       "main": [
@@ -1229,6 +1250,11 @@
         [
           {
             "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "discord error alert",
             "type": "main",
             "index": 0
           }
@@ -1296,6 +1322,11 @@
             "node": "slack error alert",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "discord error alert",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1314,6 +1345,11 @@
             "node": "slack error alert",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "discord error alert",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1323,6 +1359,11 @@
         [
           {
             "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "discord error alert",
             "type": "main",
             "index": 0
           }
@@ -1354,6 +1395,11 @@
             "node": "slack error alert",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "discord error alert",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1370,6 +1416,11 @@
         [
           {
             "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "discord error alert",
             "type": "main",
             "index": 0
           }
@@ -1401,6 +1452,11 @@
             "node": "slack error alert",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "discord error alert",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1425,6 +1481,11 @@
             "node": "slack error alert",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "discord error alert",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1434,6 +1495,11 @@
         [
           {
             "node": "slack error alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "discord error alert",
             "type": "main",
             "index": 0
           }
@@ -1456,6 +1522,11 @@
         [
           {
             "node": "slack backlog alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "discord backlog alert",
             "type": "main",
             "index": 0
           }
@@ -1513,22 +1584,28 @@
           }
         ]
       ]
+    },
+    "discord error alert": {
+      "main": [
+        [],
+        [
+          {
+            "node": "log error to table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "2e2e808d-5cd0-4650-ae16-5e9e910b3f5e",
   "meta": {
-    "aiBuilderAssisted": true,
-    "builderVariant": "mcp",
-    "templateCredsSetupCompleted": true,
-    "instanceId": "f39d9f5a04967c5a7e1fde0d70b76d38727417801f6bd7952a2895c01df52c5a"
+    "templateCredsSetupCompleted": true
   },
-  "nodeGroups": [],
-  "id": "VYOi3gDUer5L9yvH",
   "tags": []
 }
